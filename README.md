@@ -66,3 +66,8 @@ Este projeto consiste em uma **API RESTful de E-commerce** desenvolvida com foco
    ```bash
    git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
    cd seu-repositorio
+
+2. **Acesse a documentação da API:**
+Com a aplicação em execução, acesse pelo navegador:
+```bash
+  http://localhost:8080/swagger-ui/index.html
