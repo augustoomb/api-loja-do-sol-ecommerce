@@ -69,5 +69,5 @@ Este projeto consiste em uma **API RESTful de E-commerce** desenvolvida com foco
 
 2. **Acesse a documentação da API:**
 Com a aplicação em execução, acesse pelo navegador:
-```bash
-  http://localhost:8080/swagger-ui/index.html
+   ```bash
+   http://localhost:8080/swagger-ui/index.html
