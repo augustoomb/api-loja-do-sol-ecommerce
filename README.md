@@ -61,7 +61,7 @@ api-loja-do-sol-ecommerce/
 ## ⚙️ Módulos do Sistema e Funcionalidades
 
 ### 1. Gestão de Acesso e Autenticação (IAM)
-- [x] Autenticação via login com emissão de tokens JWT.
+- [] Autenticação via login com emissão de tokens JWT.
 - [x] Cadastro de novos usuários/clientes.
 - [x] Perfis de acesso e autorização diferenciados (`ADMIN` e `CLIENTE`).
 
