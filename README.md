@@ -1,6 +1,6 @@
 # 🛒 API de E-commerce Completa (Java / Spring Boot)
 
-> Uma vitrine robusta para o seu portfólio backend, demonstrando domínio sobre fluxos comerciais reais, regras de negócio complexas e controle de concorrência.
+
 
 ---
 
