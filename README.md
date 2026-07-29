@@ -1,96 +1,131 @@
-# 🛒 API de E-commerce Completa (Java / Spring Boot)
+# ☀️ Loja do Sol — Backend Core API (e-Commerce Ecosystem)
 
-
-
----
-
-## 🚀 Sobre o Projeto
-
-Este projeto consiste em uma **API RESTful de E-commerce** desenvolvida com foco em boas práticas de mercado, arquitetura limpa e alta performance. O sistema simula o ecossistema completo de uma loja virtual, cobrindo desde a autenticação de usuários até o processamento e rastreio de pedidos, utilizando tecnologias modernas do ecossistema Java.
-
----
-
-## 🛠️ Tecnologias Utilizadas
-
-* **Linguagem & Framework:** `Java 17+` | `Spring Boot 3`
-* **Persistência:** `PostgreSQL` | `Spring Data JPA / Hibernate`
-* **Segurança:** `Spring Security` | `Tokens JWT`
-* **Cache:** `Redis` (via `Spring Cache`)
-* **Documentação:** `OpenAPI` / `Swagger` (`springdoc-openapi`)
-* **DevOps & Infraestrutura:** `Docker` | `Docker Compose`
-* **Testes Unitários** `Junit5` | `Mockito`
-* **Testes de Integração** `@SpringBootTest` | `Testcontainers` | `Flyway/Liquibase`
+![Java](https://img.shields.io/badge/Java-17%2B-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%2B-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Container-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![OpenAPI](https://img.shields.io/badge/Swagger-OpenAPI_3-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
 
 ---
 
-## 📋 Requisitos e Funcionalidades
+## 📌 Visão Geral & Contexto de Negócio
 
-### 👤 1. Módulo de Usuários e Autenticação
-* Cadastro de novos usuários. [X]
-* Autenticação via login com emissão de tokens JWT. [ ]
-* Perfis de acesso diferenciados (**Admin** e **Cliente**). [X]
+A **Loja do Sol API** é a solução backend principal projetada para suportar e modernizar a operação comercial e a presença digital da empresa **Loja do Sol Aquecedores**.
 
-### 📦 2. Catálogo e Estoque
-* CRUD completo de produtos e categorias. [ ]
-* Gerenciamento de estoque integrado para **evitar vendas sem saldo disponível**. [ ]
-
-### 🛍️ 3. Carrinho e Checkout
-* Adição e remoção de itens do carrinho. [ ]
-* Cálculo automático do valor total. [ ]
-* Simulação de pagamento e finalização de compra. [ ]
-
-### 📦 4. Histórico de Pedidos
-* Acompanhamento do ciclo de vida do pedido através de status: [ ]
-  * 🟡 `Pendente`
-  * 🟢 `Pago`
-  * 🔵 `Enviado`
-  * 🔴 `Cancelado`
+Trata-se de uma **API RESTful robusta e escalável**, concebida para integrar o ecossistema de e-commerce da marca. O sistema abrange desde a autenticação segura de clientes até a gestão transacional do catálogo de produtos, controle de estoque em tempo real e fluxo de checkout.
 
 ---
 
-## 💎 Diferenciais Técnicos 
+## 🏗️ Arquitetura e Organização do Projeto
 
-* ⚡ **Cache com Redis:** Utilizado no catálogo de produtos para otimizar consultas frequentes e reduzir a carga no banco de dados relacional. [ ]
-* 📄 **Documentação Interativa:** Swagger UI integrado para testes rápidos e visualização clara dos endpoints da API. [ ]
-* 🐳 **Conteinerização Completa:** Ambiente 100% reproduzível com Docker e Docker Compose, permitindo subir a aplicação, banco de dados e cache com um único comando. [ ]
+A aplicação utiliza o padrão de **Arquitetura em Camadas (Layered Architecture)**, promovendo a separação clara de responsabilidades, alta coesão e facilidade de manutenção.
+
+```text
+api-loja-do-sol-ecommerce/
+├── src/main/java/com/...
+│   ├── config/        # Configurações globais (Security, Swagger, Redis, CORS)
+│   ├── controller/    # Camada REST (Endpoints, DTOs e validação de requisições)
+│   ├── model/         # Entidades de domínio JPA / Mapeamento do Banco de Dados
+│   ├── repository/    # Camada de Persistência (Spring Data JPA)
+│   └── service/       # Camada de Negócio (Regras, validações e orquestração)
+```
+
+### Principais Padrões e Decisões Técnicas
+* **Separação por Camadas:** Isolamento total das regras de negócio na camada `service`, mantendo a camada `controller` focada exclusivamente na gestão dos contratos REST e requisições HTTP.
+* **Cache Strategy:** Otimização da consulta ao catálogo via **Redis** para mitigar concorrência e reduzir chamadas repetitivas ao banco de dados relacional.
+* **Segurança Centralizada:** Autenticação stateless via **Spring Security** com emissão e validação de tokens **JWT**.
+* **Integridade Transacional:** Uso rigoroso de controle de transações (`@Transactional`) para garantir a consistência das operações de vendas e baixa de estoque.
 
 ---
 
-## ⚙️ Como Executar o Projeto
+## 🛠️ Tech Stack & Ferramentas
+
+### Core Backend
+* **Linguagem:** Java 17+
+* **Framework:** Spring Boot 3.x (Spring MVC, Spring Data JPA, Spring Security, Spring Validation)
+* **Persistência:** PostgreSQL & Hibernate ORM
+* **Caching:** Redis
+
+### Qualidade & Testes
+* **Testes Unitários:** JUnit 5 & Mockito
+* **Testes de Integração:** `@SpringBootTest` & Testcontainers (PostgreSQL & Redis)
+* **Database Migrations:** Flyway / Liquibase
+
+### DevOps & Documentação
+* **Documentação Viva:** OpenAPI 3 / Swagger UI (`springdoc-openapi`)
+* **Conteinerização:** Docker & Docker Compose
+
+---
+
+## ⚙️ Módulos do Sistema e Funcionalidades
+
+### 1. Gestão de Acesso e Autenticação (IAM)
+- [x] Autenticação via login com emissão de tokens JWT.
+- [x] Cadastro de novos usuários/clientes.
+- [x] Perfis de acesso e autorização diferenciados (`ADMIN` e `CLIENTE`).
+
+### 2. Catálogo & Estoque
+- [ ] CRUD completo de produtos e categorias.
+- [ ] Controle e baixa de estoque integrados para impedir vendas sem saldo disponível.
+- [ ] Estratégia de invalidação de cache Redis ao atualizar produtos.
+
+### 3. Carrinho & Checkout
+- [ ] Adição, alteração e remoção de itens no carrinho de compras.
+- [ ] Cálculo automático de frete e valor total do pedido.
+- [ ] Simulação de checkout e integração de pagamento.
+
+### 4. Ciclo de Vida de Pedidos
+- [ ] Histórico e acompanhamento de status do pedido:
+    - 🟡 `Pendente`
+    - 🟢 `Pago`
+    - 🔵 `Enviado`
+    - 🔴 `Cancelado`
+
+---
+
+## 💎 Diferenciais da Engenharia do Projeto
+
+* ⚡ **Desempenho com Cache Redis:** Consultas de leitura frequente (como a listagem de produtos) são armazenadas em memória, reduzindo drasticamente a latência e a carga no PostgreSQL.
+* 🛡️ **Segurança Robusta:** Proteção contra acessos indevidos utilizando filtros encadeados do Spring Security com autenticação JWT sem estado (*stateless*).
+* 🐳 **Ambiente Conteinerizado:** A aplicação, banco de dados e servidor Redis estão totalmente configurados via `docker-compose.yml`, permitindo subir o ambiente com um único comando.
+* 📄 **Documentação Interativa:** Swagger UI integrado, permitindo que a equipe frontend ou integradores externos testem os contratos da API diretamente pelo navegador.
+
+---
+
+## 🚦 Como Executar a Aplicação
 
 ### Pré-requisitos
-* [Docker](https://www.docker.com/) instalado na sua máquina.
-* [Docker Compose](https://docs.docker.com/compose/) instalado.
-
-### Configuração de Ambiente
-
-As credenciais do banco de dados são definidas via **variáveis de ambiente** (arquivo `.env`):
-
-1. Copie o arquivo de exemplo:
-   ```bash
-   cp .env.example .env
-   ```
-2. Edite o `.env` com as credenciais do seu PostgreSQL:
-   ```env
-   DB_URL=jdbc:postgresql://localhost:5432/loja_do_sol
-   DB_USERNAME=seu_usuario
-   DB_PASSWORD=sua_senha
-   ```
-
-> ⚠️ O arquivo `.env` está no `.gitignore` e **nunca** deve ser versionado. Apenas o `.env.example` (sem dados sensíveis) é commitado.
+* [Docker](https://www.docker.com/) e [Docker Compose](https://docs.docker.com/compose/) instalados.
 
 ### Passo a Passo
 
-1. **Clone o repositório:**
+1. **Clonar o repositório:**
    ```bash
-   git clone https://github.com/seu-usuario/seu-repositorio.git
-   cd seu-repositorio
+   git clone https://github.com/seu-usuario/api-loja-do-sol-ecommerce.git
+   cd api-loja-do-sol-ecommerce
    ```
 
-2. **Configure o ambiente** (veja seção acima).
-
-3. **Acesse a documentação da API:**
-   Com a aplicação em execução, acesse pelo navegador:
+2. **Configurar variáveis de ambiente:**
+   Copie o arquivo de exemplo para criar o seu `.env` local:
    ```bash
+   cp .env.example .env
+   ```
+
+   *Certifique-se de preencher o arquivo `.env` com suas credenciais do banco de dados e chave secreta do JWT.*
+
+3. **Subir a aplicação com Docker Compose:**
+   ```bash
+   docker compose up -d
+   ```
+
+4. **Acessar a Documentação (Swagger UI):**
+   Com os containers ativos, acesse no navegador:
+   ```text
    http://localhost:8080/swagger-ui/index.html
    ```
+
+---
+
+## 📄 Licença
+Este projeto foi desenvolvido para atender às demandas de software da **Loja do Sol**. Todos os direitos reservados.
