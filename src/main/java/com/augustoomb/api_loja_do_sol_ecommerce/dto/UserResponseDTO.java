@@ -3,6 +3,9 @@ package com.augustoomb.api_loja_do_sol_ecommerce.dto;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+@JsonPropertyOrder({"id", "name", "email", "enabled", "createdAt", "updatedAt", "roles", "addresses", "phones"})
 public class UserResponseDTO {
 
     private Long id;

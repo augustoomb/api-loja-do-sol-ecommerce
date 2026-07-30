@@ -1,5 +1,8 @@
 package com.augustoomb.api_loja_do_sol_ecommerce.dto;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+@JsonPropertyOrder({"id", "name"})
 public class RoleResponseDTO {
 
     private Long id;

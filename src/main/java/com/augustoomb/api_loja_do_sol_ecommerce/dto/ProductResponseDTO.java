@@ -3,6 +3,9 @@ package com.augustoomb.api_loja_do_sol_ecommerce.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+@JsonPropertyOrder({"id", "name", "description", "price", "stock", "imageUrl", "enabled", "createdAt", "updatedAt", "category"})
 public class ProductResponseDTO {
 
     private Long id;

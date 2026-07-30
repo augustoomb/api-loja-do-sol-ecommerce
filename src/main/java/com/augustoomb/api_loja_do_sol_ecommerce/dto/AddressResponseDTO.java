@@ -1,5 +1,8 @@
 package com.augustoomb.api_loja_do_sol_ecommerce.dto;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+@JsonPropertyOrder({"id", "street", "number", "complement", "neighborhood", "city", "state", "zipcode", "primary"})
 public class AddressResponseDTO {
 
     private Long id;
