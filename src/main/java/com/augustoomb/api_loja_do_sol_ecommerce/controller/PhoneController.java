@@ -13,7 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.augustoomb.api_loja_do_sol_ecommerce.model.Phone;
+import com.augustoomb.api_loja_do_sol_ecommerce.dto.PhoneRequestDTO;
+import com.augustoomb.api_loja_do_sol_ecommerce.dto.PhoneResponseDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.service.PhoneService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,7 +25,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/phones")
-@Tag(name = "Telefones", description = "Endpoints para gerenciamento de telefones dos usuários")
+@Tag(name = "Telefones", description = "Endpoints para gerenciamento de telefones")
 public class PhoneController {
 
     private final PhoneService phoneService;
@@ -34,75 +35,74 @@ public class PhoneController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar todos os telefones", description = "Retorna uma lista com todos os telefones cadastrados no sistema")
+    @Operation(summary = "Listar todos os telefones")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de telefones retornada com sucesso"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<List<Phone>> findAll() {
+    public ResponseEntity<List<PhoneResponseDTO>> findAll() {
         return ResponseEntity.ok(phoneService.findAll());
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Buscar telefone por ID", description = "Retorna um telefone específico pelo seu identificador")
+    @Operation(summary = "Buscar telefone por ID")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Telefone encontrado com sucesso"),
             @ApiResponse(responseCode = "404", description = "Telefone não encontrado"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<Phone> findById(
-            @Parameter(description = "ID do telefone a ser buscado", example = "1")
+    public ResponseEntity<PhoneResponseDTO> findById(
+            @Parameter(description = "ID do telefone", example = "1")
             @PathVariable Long id) {
         return ResponseEntity.ok(phoneService.findById(id));
     }
 
     @GetMapping("/user/{userId}")
-    @Operation(summary = "Listar telefones por usuário", description = "Retorna todos os telefones associados a um usuário específico")
+    @Operation(summary = "Buscar telefones por ID do usuário")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista de telefones do usuário retornada com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Usuário não encontrado"),
+            @ApiResponse(responseCode = "200", description = "Telefones encontrados com sucesso"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<List<Phone>> findByUserId(
-            @Parameter(description = "ID do usuário para buscar seus telefones", example = "1")
+    public ResponseEntity<List<PhoneResponseDTO>> findByUserId(
+            @Parameter(description = "ID do usuário", example = "1")
             @PathVariable Long userId) {
         return ResponseEntity.ok(phoneService.findByUserId(userId));
     }
 
     @PostMapping
-    @Operation(summary = "Criar novo telefone", description = "Cadastra um novo telefone vinculado a um usuário")
+    @Operation(summary = "Criar novo telefone")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Telefone criado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<Phone> create(@RequestBody Phone phone) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(phoneService.create(phone));
+    public ResponseEntity<PhoneResponseDTO> create(@RequestBody PhoneRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(phoneService.create(dto));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Atualizar telefone", description = "Atualiza os dados de um telefone existente pelo seu identificador")
+    @Operation(summary = "Atualizar telefone")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Telefone atualizado com sucesso"),
             @ApiResponse(responseCode = "404", description = "Telefone não encontrado"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<Phone> update(
-            @Parameter(description = "ID do telefone a ser atualizado", example = "1")
+    public ResponseEntity<PhoneResponseDTO> update(
+            @Parameter(description = "ID do telefone", example = "1")
             @PathVariable Long id,
-            @RequestBody Phone phone) {
-        return ResponseEntity.ok(phoneService.update(id, phone));
+            @RequestBody PhoneRequestDTO dto) {
+        return ResponseEntity.ok(phoneService.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Deletar telefone", description = "Remove um telefone do sistema pelo seu identificador")
+    @Operation(summary = "Deletar telefone")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Telefone deletado com sucesso"),
             @ApiResponse(responseCode = "404", description = "Telefone não encontrado"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     public ResponseEntity<Void> delete(
-            @Parameter(description = "ID do telefone a ser deletado", example = "1")
+            @Parameter(description = "ID do telefone", example = "1")
             @PathVariable Long id) {
         phoneService.delete(id);
         return ResponseEntity.noContent().build();
