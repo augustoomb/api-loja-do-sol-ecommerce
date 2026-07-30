@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.augustoomb.api_loja_do_sol_ecommerce.model.Role;
+import com.augustoomb.api_loja_do_sol_ecommerce.dto.RoleRequestDTO;
+import com.augustoomb.api_loja_do_sol_ecommerce.dto.RoleResponseDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.service.RoleService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,7 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/roles")
-@Tag(name = "Perfis de Acesso", description = "Endpoints para gerenciamento de perfis de acesso (roles)")
+@Tag(name = "Perfis", description = "Endpoints para gerenciamento de perfis")
 public class RoleController {
 
     private final RoleService roleService;
@@ -33,48 +34,48 @@ public class RoleController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar todos os perfis", description = "Retorna uma lista com todos os perfis de acesso cadastrados")
+    @Operation(summary = "Listar todos os perfis")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de perfis retornada com sucesso"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<List<Role>> findAll() {
+    public ResponseEntity<List<RoleResponseDTO>> findAll() {
         return ResponseEntity.ok(roleService.findAll());
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Buscar perfil por ID", description = "Retorna um perfil de acesso específico pelo seu identificador")
+    @Operation(summary = "Buscar perfil por ID")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Perfil encontrado com sucesso"),
             @ApiResponse(responseCode = "404", description = "Perfil não encontrado"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<Role> findById(
-            @Parameter(description = "ID do perfil a ser buscado", example = "1")
+    public ResponseEntity<RoleResponseDTO> findById(
+            @Parameter(description = "ID do perfil", example = "1")
             @PathVariable Long id) {
         return ResponseEntity.ok(roleService.findById(id));
     }
 
     @PostMapping
-    @Operation(summary = "Criar novo perfil", description = "Cadastra um novo perfil de acesso no sistema")
+    @Operation(summary = "Criar novo perfil")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Perfil criado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<Role> create(@RequestBody Role role) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(roleService.create(role));
+    public ResponseEntity<RoleResponseDTO> create(@RequestBody RoleRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(roleService.create(dto));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Deletar perfil", description = "Remove um perfil de acesso do sistema pelo seu identificador")
+    @Operation(summary = "Deletar perfil")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Perfil deletado com sucesso"),
             @ApiResponse(responseCode = "404", description = "Perfil não encontrado"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     public ResponseEntity<Void> delete(
-            @Parameter(description = "ID do perfil a ser deletado", example = "1")
+            @Parameter(description = "ID do perfil", example = "1")
             @PathVariable Long id) {
         roleService.delete(id);
         return ResponseEntity.noContent().build();

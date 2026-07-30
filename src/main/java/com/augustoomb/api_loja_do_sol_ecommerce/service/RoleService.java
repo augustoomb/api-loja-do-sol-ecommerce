@@ -1,9 +1,12 @@
 package com.augustoomb.api_loja_do_sol_ecommerce.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.augustoomb.api_loja_do_sol_ecommerce.dto.RoleRequestDTO;
+import com.augustoomb.api_loja_do_sol_ecommerce.dto.RoleResponseDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.exception.ResourceNotFoundException;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.Role;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.RoleName;
@@ -18,26 +21,39 @@ public class RoleService {
         this.roleRepository = roleRepository;
     }
 
-    public List<Role> findAll() {
-        return roleRepository.findAll();
+    public List<RoleResponseDTO> findAll() {
+        return roleRepository.findAll().stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
-    public Role findById(Long id) {
-        return roleRepository.findById(id)
+    public RoleResponseDTO findById(Long id) {
+        Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Role não encontrada com id: " + id));
+        return toResponseDTO(role);
     }
 
-    public Role findByName(RoleName name) {
-        return roleRepository.findByName(name)
+    public RoleResponseDTO findByName(RoleName name) {
+        Role role = roleRepository.findByName(name)
                 .orElseThrow(() -> new ResourceNotFoundException("Role não encontrada com nome: " + name));
+        return toResponseDTO(role);
     }
 
-    public Role create(Role role) {
-        return roleRepository.save(role);
+    public RoleResponseDTO create(RoleRequestDTO dto) {
+        Role role = new Role(dto.getName());
+        return toResponseDTO(roleRepository.save(role));
     }
 
     public void delete(Long id) {
-        Role role = findById(id);
+        Role role = roleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Role não encontrada com id: " + id));
         roleRepository.delete(role);
+    }
+
+    private RoleResponseDTO toResponseDTO(Role role) {
+        RoleResponseDTO dto = new RoleResponseDTO();
+        dto.setId(role.getId());
+        dto.setName(role.getName().name());
+        return dto;
     }
 }
