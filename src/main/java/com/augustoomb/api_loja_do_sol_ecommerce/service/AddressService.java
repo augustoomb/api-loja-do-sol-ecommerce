@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.augustoomb.api_loja_do_sol_ecommerce.exception.ResourceNotFoundException;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.Address;
 import com.augustoomb.api_loja_do_sol_ecommerce.repository.AddressRepository;
 
@@ -22,7 +23,7 @@ public class AddressService {
 
     public Address findById(Long id) {
         return addressRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Endereço não encontrado com id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Endereço não encontrado com id: " + id));
     }
 
     public List<Address> findByUserId(Long userId) {

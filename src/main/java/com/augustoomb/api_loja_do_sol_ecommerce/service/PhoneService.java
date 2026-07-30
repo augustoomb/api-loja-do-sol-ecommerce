@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.augustoomb.api_loja_do_sol_ecommerce.exception.ResourceNotFoundException;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.Phone;
 import com.augustoomb.api_loja_do_sol_ecommerce.repository.PhoneRepository;
 
@@ -22,7 +23,7 @@ public class PhoneService {
 
     public Phone findById(Long id) {
         return phoneRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Telefone não encontrado com id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Telefone não encontrado com id: " + id));
     }
 
     public List<Phone> findByUserId(Long userId) {

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.augustoomb.api_loja_do_sol_ecommerce.exception.ResourceNotFoundException;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.Product;
 import com.augustoomb.api_loja_do_sol_ecommerce.repository.ProductRepository;
 
@@ -22,7 +23,7 @@ public class ProductService {
 
     public Product findById(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Produto não encontrado com id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado com id: " + id));
     }
 
     public List<Product> findByCategoryId(Long categoryId) {

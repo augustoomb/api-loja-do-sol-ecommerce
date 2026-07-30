@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.augustoomb.api_loja_do_sol_ecommerce.exception.EmailAlreadyInUseException;
+import com.augustoomb.api_loja_do_sol_ecommerce.exception.ResourceNotFoundException;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.User;
 import com.augustoomb.api_loja_do_sol_ecommerce.repository.UserRepository;
 
@@ -22,17 +24,17 @@ public class UserService {
 
     public User findById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado com id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com id: " + id));
     }
 
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado com email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com email: " + email));
     }
 
     public User create(User user) {
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new RuntimeException("Email já está em uso: " + user.getEmail());
+            throw new EmailAlreadyInUseException("Email já está em uso: " + user.getEmail());
         }
         if (user.getAddresses() != null) {
             user.getAddresses().forEach(address -> address.setUser(user));

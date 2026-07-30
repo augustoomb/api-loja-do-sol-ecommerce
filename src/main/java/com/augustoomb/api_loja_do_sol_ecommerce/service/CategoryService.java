@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.augustoomb.api_loja_do_sol_ecommerce.exception.ResourceNotFoundException;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.Category;
 import com.augustoomb.api_loja_do_sol_ecommerce.repository.CategoryRepository;
 
@@ -22,12 +23,12 @@ public class CategoryService {
 
     public Category findById(Long id) {
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoria não encontrada com id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com id: " + id));
     }
 
     public Category findByName(String name) {
         return categoryRepository.findByName(name)
-                .orElseThrow(() -> new RuntimeException("Categoria não encontrada com nome: " + name));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com nome: " + name));
     }
 
     public Category create(Category category) {
