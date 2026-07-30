@@ -13,7 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.augustoomb.api_loja_do_sol_ecommerce.model.User;
+import com.augustoomb.api_loja_do_sol_ecommerce.dto.UserRequestDTO;
+import com.augustoomb.api_loja_do_sol_ecommerce.dto.UserResponseDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,7 +40,7 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Lista de usuários retornada com sucesso"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<List<User>> findAll() {
+    public ResponseEntity<List<UserResponseDTO>> findAll() {
         return ResponseEntity.ok(userService.findAll());
     }
 
@@ -50,7 +51,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<User> findById(
+    public ResponseEntity<UserResponseDTO> findById(
             @Parameter(description = "ID do usuário a ser buscado", example = "1")
             @PathVariable Long id) {
         return ResponseEntity.ok(userService.findById(id));
@@ -63,8 +64,8 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<User> create(@RequestBody User user) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.create(user));
+    public ResponseEntity<UserResponseDTO> create(@RequestBody UserRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.create(dto));
     }
 
     @PutMapping("/{id}")
@@ -74,11 +75,11 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<User> update(
+    public ResponseEntity<UserResponseDTO> update(
             @Parameter(description = "ID do usuário a ser atualizado", example = "1")
             @PathVariable Long id,
-            @RequestBody User user) {
-        return ResponseEntity.ok(userService.update(id, user));
+            @RequestBody UserRequestDTO dto) {
+        return ResponseEntity.ok(userService.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
