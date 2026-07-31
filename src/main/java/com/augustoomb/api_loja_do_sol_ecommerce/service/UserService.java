@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.AddressRequestDTO;
@@ -25,9 +26,11 @@ import com.augustoomb.api_loja_do_sol_ecommerce.repository.UserRepository;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<UserResponseDTO> findAll() {
@@ -53,7 +56,7 @@ public class UserService {
             throw new EmailAlreadyInUseException("Email já está em uso: " + dto.getEmail());
         }
 
-        User user = new User(dto.getName(), dto.getEmail(), dto.getPassword());
+        User user = new User(dto.getName(), dto.getEmail(), passwordEncoder.encode(dto.getPassword()));
 
         if (dto.getAddresses() != null) {
             user.setAddresses(dto.getAddresses().stream()
