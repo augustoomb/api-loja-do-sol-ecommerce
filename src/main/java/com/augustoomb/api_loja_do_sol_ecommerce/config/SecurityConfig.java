@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -16,6 +17,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable()) // DESABILITA POIS SO E UTIL EM APLICAÇOES QUE USAM COOKIES DE NAVEGADOR
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // API REST não mantém sessão no servidor
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll()) // TODO: Ajustar depois para permitir somente req. autenticadas
                 .formLogin(form -> form.disable()) // Desativa a página de login em HTML gerada automaticamente pelo Spring Security.
                 .httpBasic(basic -> basic.disable()); // Desativa a autenticação do tipo HTTP Basic (aquela janela nativa do navegador que pede usuário e senha via cabeçalho HTTP).
