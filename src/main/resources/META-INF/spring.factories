@@ -1,0 +1,1 @@
+org.springframework.boot.EnvironmentPostProcessor=com.augustoomb.api_loja_do_sol_ecommerce.config.DotenvEnvironmentPostProcessor
