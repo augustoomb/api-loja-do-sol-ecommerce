@@ -7,6 +7,7 @@ public class UserRequestDTO {
     private String name;
     private String email;
     private String password;
+    private String roleName;
     private Set<AddressRequestDTO> addresses;
     private Set<PhoneRequestDTO> phones;
 
@@ -32,6 +33,14 @@ public class UserRequestDTO {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getRoleName() {
+        return roleName;
+    }
+
+    public void setRoleName(String roleName) {
+        this.roleName = roleName;
     }
 
     public Set<AddressRequestDTO> getAddresses() {

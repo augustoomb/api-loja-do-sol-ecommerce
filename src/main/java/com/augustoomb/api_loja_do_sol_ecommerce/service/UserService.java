@@ -15,21 +15,27 @@ import com.augustoomb.api_loja_do_sol_ecommerce.dto.PhoneResponseDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.RoleResponseDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.UserRequestDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.UserResponseDTO;
+import com.augustoomb.api_loja_do_sol_ecommerce.exception.BusinessException;
 import com.augustoomb.api_loja_do_sol_ecommerce.exception.EmailAlreadyInUseException;
 import com.augustoomb.api_loja_do_sol_ecommerce.exception.ResourceNotFoundException;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.Address;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.Phone;
+import com.augustoomb.api_loja_do_sol_ecommerce.model.Role;
+import com.augustoomb.api_loja_do_sol_ecommerce.model.RoleName;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.User;
+import com.augustoomb.api_loja_do_sol_ecommerce.repository.RoleRepository;
 import com.augustoomb.api_loja_do_sol_ecommerce.repository.UserRepository;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -52,11 +58,36 @@ public class UserService {
     }
 
     public UserResponseDTO create(UserRequestDTO dto) {
+        RoleName roleName = resolveRoleName(dto);
+        return createUser(dto, roleName);
+    }
+
+    public UserResponseDTO register(UserRequestDTO dto) {
+        return createUser(dto, RoleName.ROLE_USER);
+    }
+
+    private RoleName resolveRoleName(UserRequestDTO dto) {
+        if (dto.getRoleName() == null || dto.getRoleName().isBlank()) {
+            throw new BusinessException("É obrigatório informar a role do usuário");
+        }
+
+        try {
+            return RoleName.valueOf(dto.getRoleName());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException("Role inválida: " + dto.getRoleName());
+        }
+    }
+
+    private UserResponseDTO createUser(UserRequestDTO dto, RoleName roleName) {
         if (userRepository.existsByEmail(dto.getEmail())) {
             throw new EmailAlreadyInUseException("Email já está em uso: " + dto.getEmail());
         }
 
         User user = new User(dto.getName(), dto.getEmail(), passwordEncoder.encode(dto.getPassword()));
+
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new ResourceNotFoundException("Role não encontrada: " + roleName));
+        user.setRoles(Collections.singleton(role));
 
         if (dto.getAddresses() != null) {
             user.setAddresses(dto.getAddresses().stream()

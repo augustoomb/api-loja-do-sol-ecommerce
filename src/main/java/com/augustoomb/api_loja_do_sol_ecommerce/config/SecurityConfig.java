@@ -29,8 +29,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // DESABILITA POIS SO E UTIL EM APLICAÇOES QUE USAM COOKIES DE NAVEGADOR
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // API REST não mantém sessão no servidor
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login").permitAll() // Login é público
-                        .requestMatchers(HttpMethod.POST, "/api/users").permitAll() // Cadastro de usuário é público
+                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll() // Login e registro público
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // Docs públicas
                         .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**").authenticated() // Leitura de produtos/categorias: ADMIN e USER
                         .anyRequest().hasRole("ADMIN")) // Restante: somente ADMIN
