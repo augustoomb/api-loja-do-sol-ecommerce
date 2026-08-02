@@ -12,6 +12,7 @@ import com.augustoomb.api_loja_do_sol_ecommerce.dto.AddressRequestDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.AddressResponseDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.PhoneRequestDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.PhoneResponseDTO;
+import com.augustoomb.api_loja_do_sol_ecommerce.dto.RegisterRequestDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.RoleResponseDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.UserRequestDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.UserResponseDTO;
@@ -59,11 +60,13 @@ public class UserService {
 
     public UserResponseDTO create(UserRequestDTO dto) {
         RoleName roleName = resolveRoleName(dto);
-        return createUser(dto, roleName);
+        return createUser(dto.getName(), dto.getEmail(), dto.getPassword(),
+                dto.getAddresses(), dto.getPhones(), roleName);
     }
 
-    public UserResponseDTO register(UserRequestDTO dto) {
-        return createUser(dto, RoleName.ROLE_USER);
+    public UserResponseDTO register(RegisterRequestDTO dto) {
+        return createUser(dto.getName(), dto.getEmail(), dto.getPassword(),
+                dto.getAddresses(), dto.getPhones(), RoleName.ROLE_USER);
     }
 
     private RoleName resolveRoleName(UserRequestDTO dto) {
@@ -78,25 +81,26 @@ public class UserService {
         }
     }
 
-    private UserResponseDTO createUser(UserRequestDTO dto, RoleName roleName) {
-        if (userRepository.existsByEmail(dto.getEmail())) {
-            throw new EmailAlreadyInUseException("Email já está em uso: " + dto.getEmail());
+    private UserResponseDTO createUser(String name, String email, String password,
+            Set<AddressRequestDTO> addresses, Set<PhoneRequestDTO> phones, RoleName roleName) {
+        if (userRepository.existsByEmail(email)) {
+            throw new EmailAlreadyInUseException("Email já está em uso: " + email);
         }
 
-        User user = new User(dto.getName(), dto.getEmail(), passwordEncoder.encode(dto.getPassword()));
+        User user = new User(name, email, passwordEncoder.encode(password));
 
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new ResourceNotFoundException("Role não encontrada: " + roleName));
         user.setRoles(Collections.singleton(role));
 
-        if (dto.getAddresses() != null) {
-            user.setAddresses(dto.getAddresses().stream()
+        if (addresses != null) {
+            user.setAddresses(addresses.stream()
                     .map(addrDTO -> toAddressEntity(addrDTO, user))
                     .collect(Collectors.toSet()));
         }
 
-        if (dto.getPhones() != null) {
-            user.setPhones(dto.getPhones().stream()
+        if (phones != null) {
+            user.setPhones(phones.stream()
                     .map(phoneDTO -> toPhoneEntity(phoneDTO, user))
                     .collect(Collectors.toSet()));
         }

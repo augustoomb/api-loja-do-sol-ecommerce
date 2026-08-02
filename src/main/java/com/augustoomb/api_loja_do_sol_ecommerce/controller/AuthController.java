@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.LoginRequestDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.LoginResponseDTO;
-import com.augustoomb.api_loja_do_sol_ecommerce.dto.UserRequestDTO;
+import com.augustoomb.api_loja_do_sol_ecommerce.dto.RegisterRequestDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.UserResponseDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.service.AuthService;
 import com.augustoomb.api_loja_do_sol_ecommerce.service.UserService;
@@ -39,7 +39,7 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<UserResponseDTO> register(@RequestBody UserRequestDTO dto) {
+    public ResponseEntity<UserResponseDTO> register(@RequestBody RegisterRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.register(dto));
     }
 
