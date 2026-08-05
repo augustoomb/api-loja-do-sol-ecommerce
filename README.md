@@ -66,8 +66,11 @@ api-loja-do-sol-ecommerce/
 - [x] Perfis de acesso e autorização diferenciados (`ADMIN` e `CLIENTE`).
 
 ### 2. Catálogo & Estoque
-- [ ] CRUD completo de produtos e categorias.
-- [ ] Controle e baixa de estoque integrados para impedir vendas sem saldo disponível.
+- [x] CRUD completo de produtos e categorias.
+- [x] Controle e baixa de estoque integrados para impedir vendas sem saldo disponível.
+- [x] Livro de movimentações de estoque (entradas, saídas e ajustes) com histórico auditável e operador responsável.
+- [x] Estoque mínimo por produto e listagem de produtos com saldo baixo.
+- [x] SKU único por produto, com geração automática quando não informado.
 - [ ] Estratégia de invalidação de cache Redis ao atualizar produtos.
 
 ### 3. Carrinho & Checkout
@@ -81,6 +84,26 @@ api-loja-do-sol-ecommerce/
     - 🟢 `Pago`
     - 🔵 `Enviado`
     - 🔴 `Cancelado`
+
+---
+
+## 📦 Controle de Estoque (Módulo implementado)
+
+O estoque é modelado como um **livro de movimentações** (`stock_movements`): entradas, saídas e ajustes geram um lançamento auditável (com motivo, referência, data e usuário operador). O saldo do produto (`products.stock`) é atualizado atomicamente na mesma transação, impedindo saldo negativo mesmo sob concorrência (condição `WHERE stock >= quantidade` + lock otimista `@Version`).
+
+### Endpoints
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `POST` | `/api/products/{id}/stock/entries` | Entrada de estoque (`quantity`, `reason`, `reference?`) |
+| `POST` | `/api/products/{id}/stock/withdrawals` | Saída de estoque (falha se saldo insuficiente) |
+| `POST` | `/api/products/{id}/stock/adjustments` | Ajuste de saldo (`newStock`, `reason`) — registra o delta |
+| `GET` | `/api/products/{id}/stock/movements` | Histórico de movimentações do produto |
+| `GET` | `/api/products/low-stock` | Produtos com `stock <= minimumStock` |
+| `GET` | `/api/stock/movements` | Movimentações globais (filtros: `productId`, `type`, `from`, `to`) |
+| `GET` | `/api/stock/summary` | Resumo: total de produtos/unidades, baixo estoque e zerados |
+
+Todos os endpoints de estoque exigem a role `ROLE_ADMIN`. O produto também ganhou `sku` (único, com geração automática) e `minimumStock` (saldo mínimo para alerta).
 
 ---
 

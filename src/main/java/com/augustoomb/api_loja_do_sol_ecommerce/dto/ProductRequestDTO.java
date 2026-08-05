@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 public class ProductRequestDTO {
 
     private String name;
+    private String sku;
+    private int minimumStock;
     private String description;
     private BigDecimal price;
     private int stock;
@@ -18,6 +20,22 @@ public class ProductRequestDTO {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
+    }
+
+    public int getMinimumStock() {
+        return minimumStock;
+    }
+
+    public void setMinimumStock(int minimumStock) {
+        this.minimumStock = minimumStock;
     }
 
     public String getDescription() {

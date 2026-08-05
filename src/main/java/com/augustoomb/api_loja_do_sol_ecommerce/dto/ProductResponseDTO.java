@@ -5,14 +5,16 @@ import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-@JsonPropertyOrder({"id", "name", "description", "price", "stock", "imageUrl", "enabled", "createdAt", "updatedAt", "category"})
+@JsonPropertyOrder({"id", "name", "sku", "description", "price", "stock", "minimumStock", "imageUrl", "enabled", "createdAt", "updatedAt", "category"})
 public class ProductResponseDTO {
 
     private Long id;
     private String name;
+    private String sku;
     private String description;
     private BigDecimal price;
     private int stock;
+    private int minimumStock;
     private String imageUrl;
     private boolean enabled;
     private LocalDateTime createdAt;
@@ -33,6 +35,14 @@ public class ProductResponseDTO {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
     }
 
     public String getDescription() {
@@ -57,6 +67,14 @@ public class ProductResponseDTO {
 
     public void setStock(int stock) {
         this.stock = stock;
+    }
+
+    public int getMinimumStock() {
+        return minimumStock;
+    }
+
+    public void setMinimumStock(int minimumStock) {
+        this.minimumStock = minimumStock;
     }
 
     public String getImageUrl() {

@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 @Entity
 @Table(name = "products")
@@ -25,6 +26,12 @@ public class Product {
 
     @Column(nullable = false)
     private String name;
+
+    @Column(unique = true)
+    private String sku;
+
+    @Column(name = "minimum_stock", nullable = false)
+    private int minimumStock = 0;
 
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -40,6 +47,10 @@ public class Product {
 
     @Column(nullable = false)
     private boolean enabled = true;
+
+    @Version
+    @Column(nullable = false)
+    private int version;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
@@ -90,6 +101,22 @@ public class Product {
         this.name = name;
     }
 
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
+    }
+
+    public int getMinimumStock() {
+        return minimumStock;
+    }
+
+    public void setMinimumStock(int minimumStock) {
+        this.minimumStock = minimumStock;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -136,6 +163,10 @@ public class Product {
 
     public void setCategory(Category category) {
         this.category = category;
+    }
+
+    public int getVersion() {
+        return version;
     }
 
     public LocalDateTime getCreatedAt() {

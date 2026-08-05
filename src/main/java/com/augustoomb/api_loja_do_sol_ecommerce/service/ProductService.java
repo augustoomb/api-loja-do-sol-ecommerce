@@ -1,6 +1,8 @@
 package com.augustoomb.api_loja_do_sol_ecommerce.service;
 
+import java.text.Normalizer;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.CategoryResponseDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.ProductRequestDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.ProductResponseDTO;
+import com.augustoomb.api_loja_do_sol_ecommerce.exception.BusinessException;
 import com.augustoomb.api_loja_do_sol_ecommerce.exception.ResourceNotFoundException;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.Category;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.Product;
@@ -59,8 +62,13 @@ public class ProductService {
         Category category = categoryRepository.findById(dto.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com id: " + dto.getCategoryId()));
 
+        String sku = resolveSku(dto.getSku(), null, dto.getName());
+        ensureSkuAvailable(sku, null);
+
         Product product = new Product(dto.getName(), dto.getDescription(), dto.getPrice(),
                 dto.getStock(), dto.getImageUrl(), category);
+        product.setSku(sku);
+        product.setMinimumStock(Math.max(dto.getMinimumStock(), 0));
 
         return toResponseDTO(productRepository.save(product));
     }
@@ -72,10 +80,15 @@ public class ProductService {
         Category category = categoryRepository.findById(dto.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com id: " + dto.getCategoryId()));
 
+        String sku = resolveSku(dto.getSku(), product, dto.getName());
+        ensureSkuAvailable(sku, id);
+
         product.setName(dto.getName());
+        product.setSku(sku);
         product.setDescription(dto.getDescription());
         product.setPrice(dto.getPrice());
         product.setStock(dto.getStock());
+        product.setMinimumStock(Math.max(dto.getMinimumStock(), 0));
         product.setImageUrl(dto.getImageUrl());
         product.setEnabled(dto.isEnabled());
         product.setCategory(category);
@@ -89,13 +102,15 @@ public class ProductService {
         productRepository.delete(product);
     }
 
-    private ProductResponseDTO toResponseDTO(Product product) {
+    public ProductResponseDTO toResponseDTO(Product product) {
         ProductResponseDTO dto = new ProductResponseDTO();
         dto.setId(product.getId());
         dto.setName(product.getName());
+        dto.setSku(product.getSku());
         dto.setDescription(product.getDescription());
         dto.setPrice(product.getPrice());
         dto.setStock(product.getStock());
+        dto.setMinimumStock(product.getMinimumStock());
         dto.setImageUrl(product.getImageUrl());
         dto.setEnabled(product.isEnabled());
         dto.setCreatedAt(product.getCreatedAt());
@@ -108,5 +123,35 @@ public class ProductService {
         dto.setCategory(categoryDTO);
 
         return dto;
+    }
+
+    private String resolveSku(String requestedSku, Product current, String name) {
+        if (requestedSku == null || requestedSku.isBlank()) {
+            if (current != null && current.getSku() != null && !current.getSku().isBlank()) {
+                return current.getSku();
+            }
+            return generateSku(name);
+        }
+        return requestedSku.trim().toUpperCase();
+    }
+
+    private void ensureSkuAvailable(String sku, Long exceptId) {
+        productRepository.findBySku(sku).ifPresent(existing -> {
+            if (exceptId == null || !existing.getId().equals(exceptId)) {
+                throw new BusinessException("Já existe um produto com o SKU: " + sku);
+            }
+        });
+    }
+
+    private String generateSku(String name) {
+        String base = Normalizer.normalize(name == null ? "PRODUTO" : name, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replaceAll("[^a-zA-Z0-9]+", "-")
+                .replaceAll("^[-]+|[-]+$", "")
+                .toUpperCase();
+        if (base.isBlank()) {
+            base = "PRODUTO";
+        }
+        return base + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }

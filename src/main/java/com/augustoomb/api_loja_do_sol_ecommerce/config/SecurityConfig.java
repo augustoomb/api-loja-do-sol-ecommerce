@@ -43,6 +43,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll() // Login e registro público
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // Docs públicas
+                        .requestMatchers("/api/products/low-stock", "/api/products/*/stock/**", "/api/stock/**").hasRole("ADMIN") // Operações e consultas de estoque: somente ADMIN
                         .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**").authenticated() // Leitura de produtos/categorias: ADMIN e USER
                         .anyRequest().hasRole("ADMIN")) // Restante: somente ADMIN
                 .formLogin(form -> form.disable()) // Desativa a página de login em HTML gerada automaticamente pelo Spring Security.
