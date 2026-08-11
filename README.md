@@ -74,12 +74,12 @@ api-loja-do-sol-ecommerce/
 - [ ] Estratégia de invalidação de cache Redis ao atualizar produtos.
 
 ### 3. Carrinho & Checkout
-- [ ] Adição, alteração e remoção de itens no carrinho de compras.
-- [ ] Cálculo automático de frete e valor total do pedido.
-- [ ] Simulação de checkout e integração de pagamento.
+- [x] Adição, alteração e remoção de itens no carrinho de compras (carrinho server-side por usuário autenticado).
+- [ ] Cálculo automático de frete e valor total do pedido. (o total de itens é calculado no servidor; frete ainda não implementado)
+- [x] Simulação de checkout e integração de pagamento (Stripe: Pix, cartão e boleto via Checkout Session + webhook).
 
 ### 4. Ciclo de Vida de Pedidos
-- [ ] Histórico e acompanhamento de status do pedido:
+- [x] Histórico e acompanhamento de status do pedido:
     - 🟡 `Pendente`
     - 🟢 `Pago`
     - 🔵 `Enviado`
@@ -104,6 +104,60 @@ O estoque é modelado como um **livro de movimentações** (`stock_movements`): 
 | `GET` | `/api/stock/summary` | Resumo: total de produtos/unidades, baixo estoque e zerados |
 
 Todos os endpoints de estoque exigem a role `ROLE_ADMIN`. O produto também ganhou `sku` (único, com geração automática) e `minimumStock` (saldo mínimo para alerta).
+
+---
+
+## 🛒 Vendas, Carrinho & Checkout (Módulo implementado)
+
+O carrinho é **server-side** e vinculado ao usuário autenticado (`carts` / `cart_items`): o total é sempre recalculado no servidor a partir do preço atual dos produtos, e a quantidade máxima por item respeita o saldo em estoque.
+
+O **checkout** cria um pedido `PENDENTE` (com snapshot do endereço de entrega e do preço dos itens em `order_items`) e uma **Checkout Session** no Stripe, esvaziando o carrinho. O pagamento é confirmado de forma **assíncrona pelo webhook** `checkout.session.completed`:
+
+1. Pedido transiciona `PENDENTE → PAGO` (idempotente — um mesmo `sessionId` não cobra/processa duas vezes).
+2. A baixa de estoque acontece na **mesma transação** do webhook, reutilizando a regra anti-saldo-negativo do módulo de estoque e registrando uma movimentação `SAIDA` com `reference` = id do pedido.
+3. Se a baixa falhar, o pedido é `CANCELADO` e o pagamento é **reembolsado** automaticamente no Stripe.
+
+O **cancelamento de um pedido pago** (pelo admin) reembolsa o cliente no Stripe e **devolve o estoque** (movimentação `ENTRADA`).
+
+### Modo simulado (desenvolvimento)
+
+Com `STRIPE_SIMULATE=true` (padrão no `.env`) **nenhuma chamada real é feita ao Stripe**: o checkout devolve um `sessionId` fake (`cs_simulate_<orderId>`) e o pagamento é concluído chamando o webhook manualmente:
+
+```bash
+curl -X POST http://localhost:8080/api/payments/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"sessionId":"cs_simulate_1","paymentMethod":"PIX"}'
+```
+
+Para **pagamentos reais**, preencha `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET` no `.env`, defina `STRIPE_SIMULATE=false` e cadastre o webhook no Stripe Dashboard (`Developers → Webhooks`) apontando para `https://seu-dominio/api/payments/webhook` no evento `checkout.session.completed`.
+
+### Variáveis de ambiente
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `STRIPE_SIMULATE` | `true` | `true` = modo simulado (sem chamadas reais) |
+| `STRIPE_SECRET_KEY` | *(vazia)* | Chave secreta do Stripe (`sk_test_...` / `sk_live_...`) |
+| `STRIPE_WEBHOOK_SECRET` | *(vazia)* | Secret do webhook (`whsec_...`) usado para validar assinatura |
+| `FRONTEND_URL` | `http://localhost:5173` | URLs de sucesso/cancelamento do Checkout |
+
+### Endpoints
+
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `GET` | `/api/cart` | autenticado | Carrinho com itens, quantidades e total |
+| `POST` | `/api/cart/items` | autenticado | Adicionar item (`productId`, `quantity`) |
+| `PATCH` | `/api/cart/items/{productId}` | autenticado | Alterar quantidade do item |
+| `DELETE` | `/api/cart/items/{productId}` | autenticado | Remover item do carrinho |
+| `DELETE` | `/api/cart` | autenticado | Esvaziar o carrinho |
+| `POST` | `/api/checkout` | autenticado | Criar pedido + sessão de pagamento (`addressId?` — padrão: endereço principal) |
+| `GET` | `/api/orders` | autenticado | Histórico de pedidos do usuário |
+| `GET` | `/api/orders/{id}` | dono / ADMIN | Detalhe do pedido |
+| `POST` | `/api/orders/{id}/cancel` | dono / ADMIN | Cancelar pedido pendente |
+| `GET` | `/api/admin/orders` | ADMIN | Listar todos os pedidos |
+| `GET` | `/api/admin/orders/{id}` | ADMIN | Detalhe de qualquer pedido |
+| `PATCH` | `/api/admin/orders/{id}/ship` | ADMIN | Marcar como enviado (`trackingCode`) |
+| `POST` | `/api/admin/orders/{id}/cancel` | ADMIN | Cancelar pedido (reembolso + devolução de estoque) |
+| `POST` | `/api/payments/webhook` | público (assinatura validada) | Notificação de pagamento do Stripe |
 
 ---
 

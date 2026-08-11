@@ -43,8 +43,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll() // Login e registro público
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // Docs públicas
+                        .requestMatchers("/api/payments/webhook").permitAll() // Webhook do Stripe: a assinatura é validada no serviço
                         .requestMatchers("/api/products/low-stock", "/api/products/*/stock/**", "/api/stock/**").hasRole("ADMIN") // Operações e consultas de estoque: somente ADMIN
+                        .requestMatchers("/api/admin/orders/**").hasRole("ADMIN") // Gestão administrativa de pedidos: somente ADMIN
                         .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**").authenticated() // Leitura de produtos/categorias: ADMIN e USER
+                        .requestMatchers("/api/addresses/**").authenticated() // Endereços: ADMIN e USER (propriedade validada no serviço)
+                        .requestMatchers("/api/cart/**", "/api/checkout/**", "/api/orders/**").authenticated() // Carrinho, checkout e pedidos: ADMIN e USER
                         .anyRequest().hasRole("ADMIN")) // Restante: somente ADMIN
                 .formLogin(form -> form.disable()) // Desativa a página de login em HTML gerada automaticamente pelo Spring Security.
                 .httpBasic(basic -> basic.disable()) // Desativa a autenticação do tipo HTTP Basic (aquela janela nativa do navegador que pede usuário e senha via cabeçalho HTTP).
