@@ -1,8 +1,5 @@
 package com.augustoomb.api_loja_do_sol_ecommerce.security;
 
-import java.util.stream.Collectors;
-
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -52,16 +49,8 @@ public class CustomUserDetailsService implements UserDetailsService { // // Impl
         User user = userRepository.findByEmail(email) // Usa seu UserRepository para buscar o usuário pelo e-mail.
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
 
-        // Cria e retorna uma instância do org.springframework.security.core.userdetails.User (uma classe pronta do Spring) contendo e-mail, senha criptografada, se a conta está ativa e a lista de permissões.
-        return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
-                user.getPassword(),
-                user.isEnabled(),
-                true,
-                true,
-                true,
-                user.getRoles().stream() // Converte as roles (ex: ROLE_ADMIN, ROLE_USER) em objetos SimpleGrantedAuthority, que é o formato de permissões do Spring.
-                        .map(role -> new SimpleGrantedAuthority(role.getName().name()))
-                        .collect(Collectors.toList()));
+        // Envolve a entidade User em um UserPrincipal, que mantém o id (usado nos logs) e
+        // expõe as roles (ex: ROLE_ADMIN, ROLE_USER) como SimpleGrantedAuthority.
+        return new UserPrincipal(user);
     }
 }

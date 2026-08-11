@@ -2,6 +2,8 @@ package com.augustoomb.api_loja_do_sol_ecommerce.service;
 
 import java.time.LocalDateTime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +16,8 @@ import com.augustoomb.api_loja_do_sol_ecommerce.repository.OrderRepository;
 
 @Service
 public class OrderPaymentService {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderPaymentService.class);
 
     private final OrderRepository orderRepository;
     private final StockService stockService;
@@ -35,6 +39,7 @@ public class OrderPaymentService {
         }
         order.setStatus(OrderStatus.PAGO);
         orderRepository.save(order);
+        log.info("Pedido {} pago (pagamento confirmado)", orderId);
     }
 
     @Transactional
@@ -43,6 +48,7 @@ public class OrderPaymentService {
         order.setStatus(OrderStatus.CANCELADO);
         order.setCanceledAt(LocalDateTime.now());
         orderRepository.save(order);
+        log.info("Pedido {} cancelado por falha de estoque", orderId);
     }
 
     private Order loadOrder(Long orderId) {

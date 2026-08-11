@@ -52,6 +52,7 @@ public class StripeService {
             dto.setOrderId(orderId);
             dto.setSessionId("cs_simulate_" + orderId);
             dto.setUrl(frontendUrl + "/pedidos/" + orderId);
+            log.info("Modo simulado: sessão gerada para o pedido {}", orderId);
             return dto;
         }
         Long amount = total.movePointRight(2).longValueExact();
@@ -77,6 +78,7 @@ public class StripeService {
             dto.setOrderId(orderId);
             dto.setSessionId(session.getId());
             dto.setUrl(session.getUrl());
+            log.info("Sessão de checkout criada no Stripe para o pedido {} (sessão {})", orderId, session.getId());
             return dto;
         } catch (StripeException e) {
             log.error("Falha ao criar a sessão de checkout no Stripe para o pedido {}", orderId, e);
@@ -129,6 +131,9 @@ public class StripeService {
             String paymentIntent = session.getPaymentIntent();
             if (paymentIntent != null) {
                 Refund.create(RefundCreateParams.builder().setPaymentIntent(paymentIntent).build());
+                log.info("Reembolso processado para a sessão {}", sessionId);
+            } else {
+                log.warn("Sessão {} sem paymentIntent; reembolso não executado", sessionId);
             }
         } catch (StripeException e) {
             log.error("Falha ao reembolsar a sessão {}", sessionId, e);

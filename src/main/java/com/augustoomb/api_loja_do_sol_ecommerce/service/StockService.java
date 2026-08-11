@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,8 @@ import jakarta.persistence.criteria.Predicate;
 @Service
 public class StockService {
 
+    private static final Logger log = LoggerFactory.getLogger(StockService.class);
+
     private final ProductRepository productRepository;
     private final StockMovementRepository stockMovementRepository;
     private final ProductService productService;
@@ -48,7 +52,10 @@ public class StockService {
         product = loadProduct(productId);
         StockMovement movement = new StockMovement(MovementType.ENTRADA, quantity, dto.getReason(),
                 dto.getReference(), product, user);
-        return toResponseDTO(stockMovementRepository.save(movement));
+        StockMovementResponseDTO response = toResponseDTO(stockMovementRepository.save(movement));
+        log.info("Estoque: entrada de {} unidade(s) no produto {} (id={}) motivo='{}' por {}",
+                quantity, product.getName(), productId, dto.getReason(), userName(user));
+        return response;
     }
 
     @Transactional
@@ -62,7 +69,10 @@ public class StockService {
         product = loadProduct(productId);
         StockMovement movement = new StockMovement(MovementType.SAIDA, quantity, dto.getReason(),
                 dto.getReference(), product, user);
-        return toResponseDTO(stockMovementRepository.save(movement));
+        StockMovementResponseDTO response = toResponseDTO(stockMovementRepository.save(movement));
+        log.info("Estoque: saída de {} unidade(s) do produto {} (id={}) motivo='{}' por {}",
+                quantity, product.getName(), productId, dto.getReason(), userName(user));
+        return response;
     }
 
     @Transactional
@@ -76,7 +86,10 @@ public class StockService {
         product = loadProduct(productId);
         StockMovement movement = new StockMovement(MovementType.AJUSTE, delta, dto.getReason(),
                 dto.getReference(), product, user);
-        return toResponseDTO(stockMovementRepository.save(movement));
+        StockMovementResponseDTO response = toResponseDTO(stockMovementRepository.save(movement));
+        log.info("Estoque: ajuste do produto {} (id={}) para {} unidade(s) (delta={}) motivo='{}' por {}",
+                product.getName(), productId, dto.getNewStock(), delta, dto.getReason(), userName(user));
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -143,6 +156,10 @@ public class StockService {
             throw new BusinessException("A quantidade deve ser maior que zero");
         }
         return quantity;
+    }
+
+    private String userName(User user) {
+        return user != null ? user.getName() : "sistema";
     }
 
     private StockMovementResponseDTO toResponseDTO(StockMovement movement) {

@@ -85,6 +85,8 @@ public class CheckoutService {
         orderRepository.save(order);
 
         cartItemRepository.deleteByCartId(cart.getId());
+        log.info("Checkout criado para o usuário {} (id={}): pedido {}, sessão {}",
+                user.getEmail(), user.getId(), order.getId(), session.getSessionId());
         return session;
     }
 
@@ -97,10 +99,13 @@ public class CheckoutService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Pedido não encontrado para a sessão: " + info.getSessionId()));
         if (order.getStatus() != OrderStatus.PENDENTE) {
+            log.warn("Webhook ignorado: pedido {} não está PENDENTE (status atual={})",
+                    order.getId(), order.getStatus());
             return; // idempotente: ignora webhooks duplicados
         }
         order.setPaymentMethod(info.getPaymentMethod());
         orderRepository.save(order);
+        log.info("Webhook de pagamento recebido: pedido {} (método={})", order.getId(), info.getPaymentMethod());
         try {
             orderPaymentService.completePayment(order.getId());
         } catch (BusinessException e) {

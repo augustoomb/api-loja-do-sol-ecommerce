@@ -5,6 +5,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,8 @@ import com.augustoomb.api_loja_do_sol_ecommerce.repository.OrderRepository;
 
 @Service
 public class OrderService {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
     private final OrderRepository orderRepository;
     private final StockService stockService;
@@ -75,8 +79,10 @@ public class OrderService {
             restock(order);
             stripeService.refund(order.getStripeSessionId());
         }
+        OrderStatus previousStatus = order.getStatus();
         order.setStatus(OrderStatus.CANCELADO);
         order.setCanceledAt(LocalDateTime.now());
+        log.info("Pedido {} cancelado (status anterior={}, admin={})", orderId, previousStatus, admin);
         return toResponseDTO(orderRepository.save(order));
     }
 
@@ -88,6 +94,7 @@ public class OrderService {
         }
         order.setTrackingCode(dto.getTrackingCode());
         order.setStatus(OrderStatus.ENVIADO);
+        log.info("Pedido {} enviado (tracking={})", orderId, dto.getTrackingCode());
         return toResponseDTO(orderRepository.save(order));
     }
 

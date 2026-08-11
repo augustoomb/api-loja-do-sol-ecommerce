@@ -6,11 +6,14 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+
+import com.augustoomb.api_loja_do_sol_ecommerce.web.RequestIdFilter;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -19,57 +22,54 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleResourceNotFound(ResourceNotFoundException ex, WebRequest request) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.NOT_FOUND.value());
-        body.put("error", "Not Found");
-        body.put("message", ex.getMessage());
-        body.put("path", request.getDescription(false).replace("uri=", ""));
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+        log.warn("Recurso não encontrado: {} (path={})", ex.getMessage(), pathOf(request));
+        return build(HttpStatus.NOT_FOUND, "Not Found", ex, request);
     }
 
     @ExceptionHandler(EmailAlreadyInUseException.class)
     public ResponseEntity<Map<String, Object>> handleEmailAlreadyInUse(EmailAlreadyInUseException ex, WebRequest request) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.CONFLICT.value());
-        body.put("error", "Conflict");
-        body.put("message", ex.getMessage());
-        body.put("path", request.getDescription(false).replace("uri=", ""));
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+        log.warn("Conflito: {} (path={})", ex.getMessage(), pathOf(request));
+        return build(HttpStatus.CONFLICT, "Conflict", ex, request);
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidCredentials(InvalidCredentialsException ex, WebRequest request) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.UNAUTHORIZED.value());
-        body.put("error", "Unauthorized");
-        body.put("message", ex.getMessage());
-        body.put("path", request.getDescription(false).replace("uri=", ""));
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+        log.warn("Credenciais inválidas (path={})", pathOf(request));
+        return build(HttpStatus.UNAUTHORIZED, "Unauthorized", ex, request);
     }
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Map<String, Object>> handleBusinessException(BusinessException ex, WebRequest request) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.UNPROCESSABLE_ENTITY.value());
-        body.put("error", "Unprocessable Entity");
-        body.put("message", ex.getMessage());
-        body.put("path", request.getDescription(false).replace("uri=", ""));
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
+        log.warn("Regra de negócio: {} (path={})", ex.getMessage(), pathOf(request));
+        return build(HttpStatus.UNPROCESSABLE_ENTITY, "Unprocessable Entity", ex, request);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex, WebRequest request) {
-        log.error("Erro inesperado em {}", request.getDescription(false), ex);
+        log.error("Erro inesperado em {} (requestId={})", pathOf(request), MDC.get(RequestIdFilter.REQUEST_ID_MDC_KEY), ex);
+        Map<String, Object> body = baseBody(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", request);
+        body.put("message", "Ocorreu um erro inesperado. Tente novamente mais tarde.");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+    }
+
+    private ResponseEntity<Map<String, Object>> build(HttpStatus status, String error,
+                                                      RuntimeException ex, WebRequest request) {
+        Map<String, Object> body = baseBody(status, error, request);
+        body.put("message", ex.getMessage());
+        return ResponseEntity.status(status).body(body);
+    }
+
+    private Map<String, Object> baseBody(HttpStatus status, String error, WebRequest request) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        body.put("error", "Internal Server Error");
-        body.put("message", "Ocorreu um erro inesperado. Tente novamente mais tarde.");
-        body.put("path", request.getDescription(false).replace("uri=", ""));
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+        body.put("status", status.value());
+        body.put("error", error);
+        body.put("path", pathOf(request));
+        body.put("requestId", MDC.get(RequestIdFilter.REQUEST_ID_MDC_KEY));
+        return body;
+    }
+
+    private String pathOf(WebRequest request) {
+        return request.getDescription(false).replace("uri=", "");
     }
 }
