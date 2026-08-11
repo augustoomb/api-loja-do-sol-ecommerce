@@ -43,6 +43,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll() // Login e registro público
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // Docs públicas
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll() // Healthcheck público; demais endpoints do actuator ficam restritos a ADMIN
                         .requestMatchers("/api/payments/webhook").permitAll() // Webhook do Stripe: a assinatura é validada no serviço
                         .requestMatchers("/api/products/low-stock", "/api/products/*/stock/**", "/api/stock/**").hasRole("ADMIN") // Operações e consultas de estoque: somente ADMIN
                         .requestMatchers("/api/admin/orders/**").hasRole("ADMIN") // Gestão administrativa de pedidos: somente ADMIN
