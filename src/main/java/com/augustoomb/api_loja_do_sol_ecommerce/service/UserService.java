@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.AddressRequestDTO;
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.AddressResponseDTO;
@@ -24,7 +25,11 @@ import com.augustoomb.api_loja_do_sol_ecommerce.model.Phone;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.Role;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.RoleName;
 import com.augustoomb.api_loja_do_sol_ecommerce.model.User;
+import com.augustoomb.api_loja_do_sol_ecommerce.repository.CartItemRepository;
+import com.augustoomb.api_loja_do_sol_ecommerce.repository.CartRepository;
+import com.augustoomb.api_loja_do_sol_ecommerce.repository.OrderRepository;
 import com.augustoomb.api_loja_do_sol_ecommerce.repository.RoleRepository;
+import com.augustoomb.api_loja_do_sol_ecommerce.repository.StockMovementRepository;
 import com.augustoomb.api_loja_do_sol_ecommerce.repository.UserRepository;
 
 @Service
@@ -33,11 +38,21 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final OrderRepository orderRepository;
+    private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
+    private final StockMovementRepository stockMovementRepository;
 
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder,
+                       OrderRepository orderRepository, CartRepository cartRepository,
+                       CartItemRepository cartItemRepository, StockMovementRepository stockMovementRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.orderRepository = orderRepository;
+        this.cartRepository = cartRepository;
+        this.cartItemRepository = cartItemRepository;
+        this.stockMovementRepository = stockMovementRepository;
     }
 
     public List<UserResponseDTO> findAll() {
@@ -118,9 +133,23 @@ public class UserService {
         return toResponseDTO(userRepository.save(user));
     }
 
+    @Transactional
     public void delete(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com id: " + id));
+
+        if (orderRepository.existsByUserId(id)) {
+            throw new BusinessException("O usuário possui pedidos e não pode ser excluído (histórico de vendas). "
+                    + "Considere desabilitá-lo.");
+        }
+
+        cartRepository.findByUserId(id).ifPresent(cart -> {
+            cartItemRepository.deleteByCartId(cart.getId());
+            cartRepository.delete(cart);
+        });
+
+        stockMovementRepository.disassociateUser(id);
+
         userRepository.delete(user);
     }
 

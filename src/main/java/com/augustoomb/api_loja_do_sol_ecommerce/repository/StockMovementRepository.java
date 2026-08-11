@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.augustoomb.api_loja_do_sol_ecommerce.model.StockMovement;
@@ -13,4 +15,8 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
         JpaSpecificationExecutor<StockMovement> {
 
     List<StockMovement> findByProductIdOrderByCreatedAtDesc(Long productId);
+
+    @Modifying
+    @Query("update StockMovement sm set sm.user = null where sm.user.id = :userId")
+    void disassociateUser(Long userId);
 }
