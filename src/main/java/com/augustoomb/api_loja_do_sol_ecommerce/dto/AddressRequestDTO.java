@@ -1,5 +1,8 @@
 package com.augustoomb.api_loja_do_sol_ecommerce.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class AddressRequestDTO {
 
     private String street;
@@ -9,6 +12,8 @@ public class AddressRequestDTO {
     private String city;
     private String state;
     private String zipcode;
+    @JsonProperty("isPrimary")
+    @JsonAlias("primary")
     private boolean isPrimary;
     private Long userId;
 
