@@ -1,182 +1,207 @@
-# ☀️ Loja do Sol — Backend Core API (e-Commerce Ecosystem)
+# ☀️ Loja do Sol — API de E-commerce
 
-![Java](https://img.shields.io/badge/Java-17%2B-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%2B-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?style=for-the-badge&logo=redis&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Container-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![OpenAPI](https://img.shields.io/badge/Swagger-OpenAPI_3-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
+API RESTful do e-commerce **Loja do Sol**: catálogo de produtos com cache em Redis, carrinho de compras server-side, checkout integrado ao Stripe e controle de estoque com auditoria.
 
----
-
-## 📌 Visão Geral & Contexto de Negócio
-
-A **Loja do Sol API** é a solução backend principal projetada para suportar e modernizar a operação comercial e a presença digital da empresa **Loja do Sol Aquecedores**.
-
-Trata-se de uma **API RESTful robusta e escalável**, concebida para integrar o ecossistema de e-commerce da marca. O sistema abrange desde a autenticação segura de clientes até a gestão transacional do catálogo de produtos, controle de estoque em tempo real e fluxo de checkout.
+![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![OpenAPI](https://img.shields.io/badge/OpenAPI-3-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
+![JWT](https://img.shields.io/badge/Auth-JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?style=for-the-badge&logo=stripe&logoColor=white)
 
 ---
 
-## 🏗️ Arquitetura e Organização do Projeto
+## Sumário
 
-A aplicação utiliza o padrão de **Arquitetura em Camadas (Layered Architecture)**, promovendo a separação clara de responsabilidades, alta coesão e facilidade de manutenção.
+- [Sobre o projeto](#sobre-o-projeto)
+- [Funcionalidades](#funcionalidades)
+- [Tecnologias](#tecnologias)
+- [Arquitetura](#arquitetura)
+- [Como executar](#como-executar)
+- [Variáveis de ambiente](#variáveis-de-ambiente)
+- [Documentação da API](#documentação-da-api)
+- [Referência de endpoints](#referência-de-endpoints)
+- [Cache Redis](#cache-redis)
+- [Pagamentos com Stripe](#pagamentos-com-stripe)
+- [Testes](#testes)
+- [Observabilidade](#observabilidade)
+- [Licença](#licença)
+
+---
+
+## Sobre o projeto
+
+A API concentra todo o fluxo comercial da loja, do cadastro do cliente até a entrega do pedido:
+
+1. **Cliente** se cadastra, faz login (JWT) e cadastra endereços e telefones.
+2. **Catálogo** com produtos, categorias e busca — leituras servidas com cache em Redis.
+3. **Carrinho** server-side, com quantidades validadas contra o estoque.
+4. **Checkout** cria o pedido e a sessão de pagamento no Stripe (PIX, cartão ou boleto).
+5. **Webhook** do Stripe confirma o pagamento, baixa o estoque na mesma transação e, se algo falhar, cancela o pedido e reembolsa o cliente.
+6. **Administrador** acompanha os pedidos, marca envios e cancela pedidos (com reembolso e devolução de estoque).
+
+## Funcionalidades
+
+- **Autenticação e autorização** — registro e login com JWT stateless e perfis `ROLE_USER` e `ROLE_ADMIN`.
+- **Catálogo** — CRUD de produtos e categorias, busca por nome, filtro por status e listagem por categoria.
+- **Estoque** — livro de movimentações auditado (entradas, saídas e ajustes), estoque mínimo por produto e proteção contra saldo negativo.
+- **Carrinho de compras** — carrinho por usuário, com total sempre recalculado no servidor.
+- **Checkout e pedidos** — integração com Stripe e ciclo de vida do pedido: `PENDENTE`, `PAGO`, `ENVIADO` e `CANCELADO`.
+- **Cadastro do cliente** — endereços e telefones vinculados ao usuário autenticado.
+
+## Tecnologias
+
+### Backend
+
+| Tecnologia | Versão | Uso |
+|---|---|---|
+| Java | 21 | Linguagem |
+| Spring Boot | 4.1.0 | Framework |
+| Spring MVC | — | Camada REST |
+| Spring Data JPA / Hibernate | — | Persistência e mapeamento objeto-relacional |
+| Spring Security + JJWT | 0.12.6 | Autenticação e autorização com JWT |
+| Spring Cache + Spring Data Redis | — | Cache de leitura do catálogo |
+| Spring Actuator | — | Health check, métricas e logs |
+| PostgreSQL | 16 | Banco de dados relacional |
+| Redis | 7 | Cache em memória |
+| Stripe (stripe-java) | 33.2.0 | Pagamentos e webhooks |
+| springdoc-openapi | 2.8.6 | Documentação OpenAPI 3 / Swagger UI |
+| Docker / Docker Compose | — | Ambiente local conteinerizado |
+| Maven (wrapper) | — | Build e gerenciamento de dependências |
+
+### Testes
+
+- **JUnit 5** e **Mockito** para testes unitários das camadas de serviço.
+- **Testes de integração** com `@SpringBootTest` contra o PostgreSQL e o Redis locais (providos pelo Docker Compose).
+
+## Arquitetura
+
+O projeto segue o padrão de **arquitetura em camadas**, com regras de negócio isoladas na camada de serviço e a camada de controller dedicada aos contratos REST:
 
 ```text
 api-loja-do-sol-ecommerce/
-├── src/main/java/com/...
-│   ├── config/        # Configurações globais (Security, Swagger, Redis, CORS)
-│   ├── controller/    # Camada REST (Endpoints, DTOs e validação de requisições)
-│   ├── model/         # Entidades de domínio JPA / Mapeamento do Banco de Dados
-│   ├── repository/    # Camada de Persistência (Spring Data JPA)
-│   └── service/       # Camada de Negócio (Regras, validações e orquestração)
+├── docker-compose.yml          # PostgreSQL + Redis + aplicação
+├── pom.xml
+└── src/
+    ├── main/java/com/augustoomb/api_loja_do_sol_ecommerce/
+    │   ├── config/             # Segurança, CORS, cache Redis, OpenAPI e bootstrap do admin
+    │   ├── controller/         # Endpoints REST
+    │   ├── dto/                # Objetos de transferência de dados
+    │   ├── exception/          # Exceções de negócio e tratamento global de erros
+    │   ├── model/              # Entidades JPA
+    │   ├── repository/         # Repositórios Spring Data JPA
+    │   ├── security/           # Filtro JWT e autenticação
+    │   ├── service/            # Regras de negócio e orquestração
+    │   └── web/                # Logging de requisições e request ID
+    └── test/java/...           # Testes unitários e de integração
 ```
 
-### Principais Padrões e Decisões Técnicas
-* **Separação por Camadas:** Isolamento total das regras de negócio na camada `service`, mantendo a camada `controller` focada exclusivamente na gestão dos contratos REST e requisições HTTP.
-* **Cache Strategy:** Otimização da consulta ao catálogo via **Redis** para mitigar concorrência e reduzir chamadas repetitivas ao banco de dados relacional.
-* **Segurança Centralizada:** Autenticação stateless via **Spring Security** com emissão e validação de tokens **JWT**.
-* **Integridade Transacional:** Uso rigoroso de controle de transações (`@Transactional`) para garantir a consistência das operações de vendas e baixa de estoque.
+Principais decisões:
 
----
+- **Transações** — operações de venda e baixa de estoque usam `@Transactional` para garantir consistência.
+- **Consistência do estoque** — a baixa usa condição `WHERE stock >= quantidade` com lock otimista (`@Version`), impedindo venda sem saldo mesmo sob concorrência.
+- **Cache de DTOs** — o Redis armazena apenas `ProductResponseDTO`/`CategoryResponseDTO` em JSON, nunca entidades JPA.
+- **Degradação graciosa** — se o Redis estiver fora do ar, a aplicação continua respondendo consultando o PostgreSQL diretamente.
 
-## 🛠️ Tech Stack & Ferramentas
+## Como executar
 
-### Core Backend
-* **Linguagem:** Java 17+
-* **Framework:** Spring Boot 3.x (Spring MVC, Spring Data JPA, Spring Security, Spring Validation)
-* **Persistência:** PostgreSQL & Hibernate ORM
-* **Caching:** Redis
+### Pré-requisitos
 
-### Qualidade & Testes
-* **Testes Unitários:** JUnit 5 & Mockito
-* **Testes de Integração:** `@SpringBootTest` & Testcontainers (PostgreSQL & Redis)
-* **Database Migrations:** Flyway / Liquibase
+- [Docker](https://www.docker.com/) e [Docker Compose](https://docs.docker.com/compose/).
+- Java 21 e Maven apenas para desenvolvimento local fora do Docker.
 
-### DevOps & Documentação
-* **Documentação Viva:** OpenAPI 3 / Swagger UI (`springdoc-openapi`)
-* **Conteinerização:** Docker & Docker Compose
-
----
-
-## ⚙️ Módulos do Sistema e Funcionalidades
-
-### 1. Gestão de Acesso e Autenticação (IAM)
-- [] Autenticação via login com emissão de tokens JWT.
-- [x] Cadastro de novos usuários/clientes.
-- [x] Perfis de acesso e autorização diferenciados (`ADMIN` e `CLIENTE`).
-
-### 2. Catálogo & Estoque
-- [x] CRUD completo de produtos e categorias.
-- [x] Controle e baixa de estoque integrados para impedir vendas sem saldo disponível.
-- [x] Livro de movimentações de estoque (entradas, saídas e ajustes) com histórico auditável e operador responsável.
-- [x] Estoque mínimo por produto e listagem de produtos com saldo baixo.
-- [x] SKU único por produto, com geração automática quando não informado.
-- [x] Estratégia de invalidação de cache Redis ao atualizar produtos.
-
-### 3. Carrinho & Checkout
-- [x] Adição, alteração e remoção de itens no carrinho de compras (carrinho server-side por usuário autenticado).
-- [ ] Cálculo automático de frete e valor total do pedido. (o total de itens é calculado no servidor; frete ainda não implementado)
-- [x] Simulação de checkout e integração de pagamento (Stripe: Pix, cartão e boleto via Checkout Session + webhook).
-
-### 4. Ciclo de Vida de Pedidos
-- [x] Histórico e acompanhamento de status do pedido:
-    - 🟡 `Pendente`
-    - 🟢 `Pago`
-    - 🔵 `Enviado`
-    - 🔴 `Cancelado`
-
----
-
-## 📦 Controle de Estoque (Módulo implementado)
-
-O estoque é modelado como um **livro de movimentações** (`stock_movements`): entradas, saídas e ajustes geram um lançamento auditável (com motivo, referência, data e usuário operador). O saldo do produto (`products.stock`) é atualizado atomicamente na mesma transação, impedindo saldo negativo mesmo sob concorrência (condição `WHERE stock >= quantidade` + lock otimista `@Version`).
-
-### Endpoints
-
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `POST` | `/api/products/{id}/stock/entries` | Entrada de estoque (`quantity`, `reason`, `reference?`) |
-| `POST` | `/api/products/{id}/stock/withdrawals` | Saída de estoque (falha se saldo insuficiente) |
-| `POST` | `/api/products/{id}/stock/adjustments` | Ajuste de saldo (`newStock`, `reason`) — registra o delta |
-| `GET` | `/api/products/{id}/stock/movements` | Histórico de movimentações do produto |
-| `GET` | `/api/products/low-stock` | Produtos com `stock <= minimumStock` |
-| `GET` | `/api/stock/movements` | Movimentações globais (filtros: `productId`, `type`, `from`, `to`) |
-| `GET` | `/api/stock/summary` | Resumo: total de produtos/unidades, baixo estoque e zerados |
-
-Todos os endpoints de estoque exigem a role `ROLE_ADMIN`. O produto também ganhou `sku` (único, com geração automática) e `minimumStock` (saldo mínimo para alerta).
-
----
-
-## ⚡ Cache Redis (Módulo implementado)
-
-O **Redis** é usado como cache de leitura do catálogo via **Spring Cache** (`@Cacheable` / `@CacheEvict`). Apenas dados de **baixa frequência de escrita** são cacheados; carrinho, pedidos e estoque continuam lendo **sempre do banco** (sem risco de dado defasado).
-
-### O que é cacheado
-
-| Cache | Conteúdo | TTL |
-|---|---|---|
-| `products` | Listagens, produto por ID, por categoria, busca e ativos | 2 min |
-| `categories` | Listagem e categorias por ID/nome | 10 min |
-
-### Quando o cache é invalidado
-
-* Criar, atualizar ou excluir um **produto** → cache `products` é esvaziado.
-* Criar, atualizar ou excluir uma **categoria** → caches `categories` e `products` são esvaziados (o DTO de produto embute a categoria).
-* **Entrada, saída ou ajuste de estoque** → cache `products` é esvaziado (o DTO de produto exibe o saldo). Isso cobre também a baixa automática de estoque do checkout/webhook do Stripe.
-
-### Degradação graciosa
-
-Se o Redis estiver fora do ar, a aplicação **continua funcionando**: a falha é registrada no log e a consulta segue direto ao PostgreSQL (ver `CacheConfig.errorHandler()`).
-
-### Inspecionando o cache
+### Passo a passo
 
 ```bash
-docker exec -it lojadbsol_redis redis-cli
-> KEYS products*
-> TTL products::1      # tempo de vida restante de uma chave
-> GET  products::1     # valor serializado em JSON
+# 1. Clone o repositório e acesse o diretório
+git clone https://github.com/seu-usuario/api-loja-do-sol-ecommerce.git
+cd api-loja-do-sol-ecommerce
+
+# 2. Crie o arquivo de ambiente a partir do exemplo
+cp .env.example .env
+
+# 3. Edite o .env com as credenciais do banco e o JWT_SECRET
+#    (gere o segredo JWT com: openssl rand -hex 64)
+
+# 4. Suba a aplicação (PostgreSQL + Redis + API)
+docker compose up -d
 ```
 
-* **Configuração:** `src/main/java/com/augustoomb/api_loja_do_sol_ecommerce/config/CacheConfig.java`
-* **Variáveis de ambiente:** `REDIS_HOST` (padrão `localhost`) e `REDIS_PORT` (padrão `6379`)
-* **Teste:** `CacheIntegrationTest` (verifica popular/invalidar o cache)
+No primeiro boot, um usuário administrador é criado automaticamente com as credenciais definidas em `ADMIN_EMAIL` e `ADMIN_PASSWORD` no `.env`.
 
----
-
-## 🛒 Vendas, Carrinho & Checkout (Módulo implementado)
-
-O carrinho é **server-side** e vinculado ao usuário autenticado (`carts` / `cart_items`): o total é sempre recalculado no servidor a partir do preço atual dos produtos, e a quantidade máxima por item respeita o saldo em estoque.
-
-O **checkout** cria um pedido `PENDENTE` (com snapshot do endereço de entrega e do preço dos itens em `order_items`) e uma **Checkout Session** no Stripe, esvaziando o carrinho. O pagamento é confirmado de forma **assíncrona pelo webhook** `checkout.session.completed`:
-
-1. Pedido transiciona `PENDENTE → PAGO` (idempotente — um mesmo `sessionId` não cobra/processa duas vezes).
-2. A baixa de estoque acontece na **mesma transação** do webhook, reutilizando a regra anti-saldo-negativo do módulo de estoque e registrando uma movimentação `SAIDA` com `reference` = id do pedido.
-3. Se a baixa falhar, o pedido é `CANCELADO` e o pagamento é **reembolsado** automaticamente no Stripe.
-
-O **cancelamento de um pedido pago** (pelo admin) reembolsa o cliente no Stripe e **devolve o estoque** (movimentação `ENTRADA`).
-
-### Modo simulado (desenvolvimento)
-
-Com `STRIPE_SIMULATE=true` (padrão no `.env`) **nenhuma chamada real é feita ao Stripe**: o checkout devolve um `sessionId` fake (`cs_simulate_<orderId>`) e o pagamento é concluído chamando o webhook manualmente:
+### Desenvolvimento local
 
 ```bash
-curl -X POST http://localhost:8080/api/payments/webhook \
-  -H "Content-Type: application/json" \
-  -d '{"sessionId":"cs_simulate_1","paymentMethod":"PIX"}'
+# Com o PostgreSQL e o Redis rodando (docker compose up -d db redis)
+./mvnw spring-boot:run
 ```
 
-Para **pagamentos reais**, preencha `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET` no `.env`, defina `STRIPE_SIMULATE=false` e cadastre o webhook no Stripe Dashboard (`Developers → Webhooks`) apontando para `https://seu-dominio/api/payments/webhook` no evento `checkout.session.completed`.
+## Variáveis de ambiente
 
-### Variáveis de ambiente
+| Variável | Obrigatória | Padrão | Descrição |
+|---|---|---|---|
+| `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | sim | — | Credenciais do container PostgreSQL |
+| `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | sim | — | Conexão JDBC da aplicação |
+| `JWT_SECRET` | sim | — | Segredo para assinatura dos tokens JWT |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | sim | — | Credenciais do administrador criado no primeiro boot |
+| `CORS_ALLOWED_ORIGINS` | não | `http://localhost:5173` | Origens permitidas no CORS (separadas por vírgula) |
+| `REDIS_HOST` / `REDIS_PORT` | não | `localhost` / `6379` | Endereço do Redis (fora do Docker) |
+| `STRIPE_SECRET_KEY` | não | *(vazia)* | Chave secreta do Stripe (`sk_test_...`) |
+| `STRIPE_WEBHOOK_SECRET` | não | *(vazia)* | Secret do webhook (`whsec_...`) |
+| `STRIPE_SIMULATE` | não | `true` | `true` = modo simulado (sem chamadas reais ao Stripe) |
+| `FRONTEND_URL` | não | `http://localhost:5173` | URLs de sucesso/cancelamento do checkout |
 
-| Variável | Padrão | Descrição |
-|---|---|---|
-| `STRIPE_SIMULATE` | `true` | `true` = modo simulado (sem chamadas reais) |
-| `STRIPE_SECRET_KEY` | *(vazia)* | Chave secreta do Stripe (`sk_test_...` / `sk_live_...`) |
-| `STRIPE_WEBHOOK_SECRET` | *(vazia)* | Secret do webhook (`whsec_...`) usado para validar assinatura |
-| `FRONTEND_URL` | `http://localhost:5173` | URLs de sucesso/cancelamento do Checkout |
+## Documentação da API
 
-### Endpoints
+Com a aplicação no ar, a documentação interativa está disponível em:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+O contrato OpenAPI também pode ser consultado em `http://localhost:8080/v3/api-docs`.
+
+## Referência de endpoints
+
+### Autenticação — `/api/auth`
+
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | público | Cadastro de cliente |
+| `POST` | `/api/auth/login` | público | Login e emissão do token JWT |
+
+### Catálogo — `/api/products` e `/api/categories`
+
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `GET` | `/api/products` | autenticado | Lista produtos (filtro opcional `?enabled=true`) |
+| `GET` | `/api/products/{id}` | autenticado | Detalhe do produto |
+| `GET` | `/api/products/category/{categoryId}` | autenticado | Produtos por categoria |
+| `GET` | `/api/products/search?name=` | autenticado | Busca de produtos por nome |
+| `POST` | `/api/products` | ADMIN | Criar produto |
+| `PUT` | `/api/products/{id}` | ADMIN | Atualizar produto |
+| `DELETE` | `/api/products/{id}` | ADMIN | Excluir produto |
+| `GET` | `/api/categories` | autenticado | Lista categorias |
+| `GET` | `/api/categories/{id}` | autenticado | Detalhe da categoria |
+| `POST` | `/api/categories` | ADMIN | Criar categoria |
+| `PUT` | `/api/categories/{id}` | ADMIN | Atualizar categoria |
+| `DELETE` | `/api/categories/{id}` | ADMIN | Excluir categoria |
+
+### Estoque — `/api/products/{id}/stock` e `/api/stock`
+
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `POST` | `/api/products/{id}/stock/entries` | ADMIN | Entrada de estoque (`quantity`, `reason`, `reference?`) |
+| `POST` | `/api/products/{id}/stock/withdrawals` | ADMIN | Saída de estoque (falha se saldo insuficiente) |
+| `POST` | `/api/products/{id}/stock/adjustments` | ADMIN | Ajuste de saldo (`newStock`, `reason`) |
+| `GET` | `/api/products/{id}/stock/movements` | ADMIN | Histórico de movimentações do produto |
+| `GET` | `/api/products/low-stock` | ADMIN | Produtos com `stock <= minimumStock` |
+| `GET` | `/api/stock/movements` | ADMIN | Movimentações globais (filtros: `productId`, `type`, `from`, `to`) |
+| `GET` | `/api/stock/summary` | ADMIN | Resumo: totais, baixo estoque e produtos zerados |
+
+### Carrinho — `/api/cart`
 
 | Método | Endpoint | Acesso | Descrição |
 |---|---|---|---|
@@ -185,7 +210,12 @@ Para **pagamentos reais**, preencha `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET
 | `PATCH` | `/api/cart/items/{productId}` | autenticado | Alterar quantidade do item |
 | `DELETE` | `/api/cart/items/{productId}` | autenticado | Remover item do carrinho |
 | `DELETE` | `/api/cart` | autenticado | Esvaziar o carrinho |
-| `POST` | `/api/checkout` | autenticado | Criar pedido + sessão de pagamento (`addressId?` — padrão: endereço principal) |
+
+### Checkout e pedidos — `/api/checkout`, `/api/orders` e `/api/admin/orders`
+
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `POST` | `/api/checkout` | autenticado | Criar pedido + sessão de pagamento (`addressId?`) |
 | `GET` | `/api/orders` | autenticado | Histórico de pedidos do usuário |
 | `GET` | `/api/orders/{id}` | dono / ADMIN | Detalhe do pedido |
 | `POST` | `/api/orders/{id}/cancel` | dono / ADMIN | Cancelar pedido pendente |
@@ -195,50 +225,86 @@ Para **pagamentos reais**, preencha `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET
 | `POST` | `/api/admin/orders/{id}/cancel` | ADMIN | Cancelar pedido (reembolso + devolução de estoque) |
 | `POST` | `/api/payments/webhook` | público (assinatura validada) | Notificação de pagamento do Stripe |
 
----
+### Cadastro do cliente — `/api/addresses` e `/api/phones`
 
-## 💎 Diferenciais da Engenharia do Projeto
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `GET` / `POST` | `/api/addresses`, `/api/addresses/{id}` | autenticado | Listar e criar endereços |
+| `PUT` / `DELETE` | `/api/addresses/{id}` | autenticado | Atualizar e excluir endereço |
+| `GET` / `POST` | `/api/phones`, `/api/phones/{id}` | autenticado | Listar e criar telefones |
+| `PUT` / `DELETE` | `/api/phones/{id}` | autenticado | Atualizar e excluir telefone |
 
-* ⚡ **Desempenho com Cache Redis:** Consultas de leitura frequente (como a listagem de produtos) são armazenadas em memória, reduzindo drasticamente a latência e a carga no PostgreSQL.
-* 🛡️ **Segurança Robusta:** Proteção contra acessos indevidos utilizando filtros encadeados do Spring Security com autenticação JWT sem estado (*stateless*).
-* 🐳 **Ambiente Conteinerizado:** A aplicação, banco de dados e servidor Redis estão totalmente configurados via `docker-compose.yml`, permitindo subir o ambiente com um único comando.
-* 📄 **Documentação Interativa:** Swagger UI integrado, permitindo que a equipe frontend ou integradores externos testem os contratos da API diretamente pelo navegador.
+### Administração — `/api/users` e `/api/roles`
 
----
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `GET` / `POST` | `/api/users` | ADMIN | Listar e criar usuários |
+| `GET` / `PUT` / `DELETE` | `/api/users/{id}` | ADMIN | Detalhar, atualizar e excluir usuário |
+| `GET` | `/api/roles` | ADMIN | Listar perfis de acesso |
 
-## 🚦 Como Executar a Aplicação
+## Cache Redis
 
-### Pré-requisitos
-* [Docker](https://www.docker.com/) e [Docker Compose](https://docs.docker.com/compose/) instalados.
+O Redis é utilizado como cache de leitura do catálogo via Spring Cache (`@Cacheable` / `@CacheEvict`). Dados de escrita frequente — carrinho, pedidos e estoque — continuam sendo lidos sempre do banco.
 
-### Passo a Passo
+| Cache | Conteúdo | TTL |
+|---|---|---|
+| `products` | Listagens, produto por ID, por categoria, busca e ativos | 2 min |
+| `categories` | Listagem e categorias por ID/nome | 10 min |
 
-1. **Clonar o repositório:**
-   ```bash
-   git clone https://github.com/seu-usuario/api-loja-do-sol-ecommerce.git
-   cd api-loja-do-sol-ecommerce
-   ```
+**Invalidação:**
 
-2. **Configurar variáveis de ambiente:**
-   Copie o arquivo de exemplo para criar o seu `.env` local:
-   ```bash
-   cp .env.example .env
-   ```
+- Criar, atualizar ou excluir um **produto** → esvazia o cache `products`.
+- Criar, atualizar ou excluir uma **categoria** → esvazia `categories` e `products` (o DTO de produto embute a categoria).
+- **Entrada, saída ou ajuste de estoque** → esvazia `products` (o DTO exibe o saldo). Isso cobre também a baixa automática do checkout via webhook do Stripe.
 
-   *Certifique-se de preencher o arquivo `.env` com suas credenciais do banco de dados e chave secreta do JWT.*
+**Degradação graciosa:** se o Redis estiver indisponível, a falha é registrada no log e a consulta segue direto ao PostgreSQL (ver `CacheConfig.errorHandler()`).
 
-3. **Subir a aplicação com Docker Compose:**
-   ```bash
-   docker compose up -d
-   ```
+```bash
+# Inspecionando o cache
+docker exec -it lojadbsol_redis redis-cli
+> KEYS products*
+> TTL products::1
+> GET  products::1
+```
 
-4. **Acessar a Documentação (Swagger UI):**
-   Com os containers ativos, acesse no navegador:
-   ```text
-   http://localhost:8080/swagger-ui/index.html
-   ```
+## Pagamentos com Stripe
 
----
+O checkout cria um pedido `PENDENTE` e uma **Checkout Session** no Stripe. A confirmação é assíncrona, via webhook `checkout.session.completed`:
 
-## 📄 Licença
-Este projeto foi desenvolvido para atender às demandas de software da **Loja do Sol**. Todos os direitos reservados.
+1. O pedido transiciona `PENDENTE → PAGO` (idempotente — um mesmo `sessionId` não processa duas vezes).
+2. A baixa de estoque acontece na mesma transação do webhook, registrando uma movimentação de `SAIDA` com a referência do pedido.
+3. Se a baixa falhar, o pedido é `CANCELADO` e o pagamento é reembolsado automaticamente.
+
+### Modo simulado (padrão no desenvolvimento)
+
+Com `STRIPE_SIMULATE=true`, nenhuma chamada real é feita ao Stripe: o checkout devolve um `sessionId` fake (`cs_simulate_<orderId>`) e o pagamento pode ser concluído chamando o webhook manualmente:
+
+```bash
+curl -X POST http://localhost:8080/api/payments/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"sessionId":"cs_simulate_1","paymentMethod":"PIX"}'
+```
+
+### Pagamentos reais
+
+Defina `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET` no `.env`, altere `STRIPE_SIMULATE=false` e cadastre o webhook no [Stripe Dashboard](https://dashboard.stripe.com/webhooks) apontando para `https://seu-dominio/api/payments/webhook` no evento `checkout.session.completed`.
+
+## Testes
+
+```bash
+# Com o PostgreSQL e o Redis locais rodando (docker compose up -d db redis)
+STRIPE_SIMULATE=true ./mvnw test
+```
+
+- **48 testes** entre unitários (JUnit 5 + Mockito) e de integração (`@SpringBootTest`).
+- Os testes de integração de pedidos utilizam o fluxo simulado do Stripe — por isso a suíte deve rodar com `STRIPE_SIMULATE=true`.
+
+## Observabilidade
+
+- **Spring Actuator** expõe `health`, `info`, `metrics`, `loggers` e `cache` (health e info são públicos; os demais exigem `ROLE_ADMIN`).
+- **Logging estruturado** de requisições: cada log carrega o `requestId` da requisição e o `userId` autenticado, facilitando o rastreio de erros.
+- O profile `prod` (`SPRING_PROFILES_ACTIVE=prod`) emite logs no formato ECS, pronto para ferramentas como Elastic Stack.
+
+## Licença
+
+Projeto desenvolvido para a **Loja do Sol**. Todos os direitos reservados.
