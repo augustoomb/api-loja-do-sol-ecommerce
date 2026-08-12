@@ -1,0 +1,22 @@
+# Configuração do Prometheus para a Loja do Sol API
+# Referência: https://prometheus.io/docs/prometheus/latest/configuration/configuration/
+
+global:
+  scrape_interval: 15s      # frequência com que o Prometheus coleta métricas
+  evaluation_interval: 15s  # frequência de avaliação das regras de alerta
+
+scrape_configs:
+  # Monitora o próprio Prometheus (healthcheck do serviço)
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Job principal: métricas da API Spring Boot (Micrometer -> /actuator/prometheus)
+  # O hostname "app" é o nome do serviço dentro da rede do docker-compose
+  - job_name: 'loja-do-sol-app'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['app:8080']
+        labels:
+          application: 'api-loja-do-sol-ecommerce'

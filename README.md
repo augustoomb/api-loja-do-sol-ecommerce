@@ -69,6 +69,8 @@ A API concentra todo o fluxo comercial da loja, do cadastro do cliente até a en
 | Stripe (stripe-java) | 33.2.0 | Pagamentos e webhooks |
 | springdoc-openapi | 2.8.6 | Documentação OpenAPI 3 / Swagger UI |
 | Docker / Docker Compose | — | Ambiente local conteinerizado |
+| Prometheus | 3.13 | Coleta e armazenamento de métricas (via Micrometer) |
+| Grafana | 13.1 | Dashboards de monitoramento (JVM / Spring Boot) |
 | Maven (wrapper) | — | Build e gerenciamento de dependências |
 
 ### Testes
@@ -82,7 +84,9 @@ O projeto segue o padrão de **arquitetura em camadas**, com regras de negócio 
 
 ```text
 api-loja-do-sol-ecommerce/
-├── docker-compose.yml          # PostgreSQL + Redis + aplicação
+├── docker-compose.yml          # PostgreSQL + Redis + aplicação + Prometheus + Grafana
+├── prometheus/prometheus.yml   # Configuração de coleta de métricas
+├── grafana/                    # Provisionamento automático (datasource + dashboard JVM)
 ├── pom.xml
 └── src/
     ├── main/java/com/augustoomb/api_loja_do_sol_ecommerce/
@@ -125,7 +129,7 @@ cp .env.example .env
 # 3. Edite o .env com as credenciais do banco e o JWT_SECRET
 #    (gere o segredo JWT com: openssl rand -hex 64)
 
-# 4. Suba a aplicação (PostgreSQL + Redis + API)
+# 4. Suba a stack completa (PostgreSQL + Redis + API + Prometheus + Grafana)
 docker compose up -d
 ```
 
@@ -152,6 +156,7 @@ No primeiro boot, um usuário administrador é criado automaticamente com as cre
 | `STRIPE_WEBHOOK_SECRET` | não | *(vazia)* | Secret do webhook (`whsec_...`) |
 | `STRIPE_SIMULATE` | não | `true` | `true` = modo simulado (sem chamadas reais ao Stripe) |
 | `FRONTEND_URL` | não | `http://localhost:5173` | URLs de sucesso/cancelamento do checkout |
+| `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` | não | `admin` / `admin` | Credenciais de acesso ao Grafana |
 
 ## Documentação da API
 
@@ -301,7 +306,31 @@ STRIPE_SIMULATE=true ./mvnw test
 
 ## Observabilidade
 
-- **Spring Actuator** expõe `health` (incluindo os grupos `liveness` e `readiness`), `info`, `metrics` e `loggers`. `health` e `info` são públicos; os demais exigem `ROLE_ADMIN`.
+### Métricas (Prometheus + Grafana)
+
+A API expõe métricas no formato Prometheus em `/actuator/prometheus` (Micrometer), coletadas pelo Prometheus e visualizadas no Grafana:
+
+- **JVM** — memória, GC, threads, uptime.
+- **HTTP** — latência e contagem por rota/status (`http_server_requests_*`).
+- **Infraestrutura** — pool HikariCP, Redis (Lettuce), cache e contagem de logs por nível (`logback_events_total`).
+
+```bash
+docker compose up -d   # sobe também Prometheus (9090) e Grafana (3000)
+```
+
+| Ferramenta | URL | Acesso |
+|---|---|---|
+| Métricas cruas | `http://localhost:8080/actuator/prometheus` | público |
+| Prometheus UI | `http://localhost:9090` | local |
+| Grafana | `http://localhost:3000` | `admin` / `admin` (defina `GRAFANA_ADMIN_PASSWORD` no `.env`) |
+
+O Grafana é provisionado automaticamente com o datasource Prometheus e a dashboard **JVM/Micrometer (ID 4701)** — ao abrir `http://localhost:3000`, basta navegar em *Dashboards*.
+
+> **Nota de segurança:** `/actuator/prometheus` é público por design (necessário para o scrape). As métricas são agregadas — contagens e latências por rota — e não contêm dados sensíveis, mas revelam a superfície de endpoints da API. Se a API for exposta à internet, restrinja o acesso (ex.: Basic Auth ou `management.server.port` dedicado à rede interna).
+
+### Actuator e logs
+
+- **Spring Actuator** expõe `health` (incluindo os grupos `liveness` e `readiness`), `info`, `metrics`, `loggers` e `prometheus`. `health`, `info` e `prometheus` (alvo do scrape) são públicos; os demais exigem `ROLE_ADMIN`.
 - **Informações da aplicação**: `/actuator/info` exibe nome, descrição e versão do projeto.
 - **Logging estruturado** de requisições: cada log carrega o `requestId` da requisição e o `userId` autenticado, facilitando o rastreio de erros.
 - O profile `prod` (`SPRING_PROFILES_ACTIVE=prod`) emite logs no formato ECS, pronto para ferramentas como Elastic Stack.

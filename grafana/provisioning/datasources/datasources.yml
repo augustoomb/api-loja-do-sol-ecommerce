@@ -1,0 +1,14 @@
+# Provisionamento automático do datasource Prometheus no Grafana
+# Referência: https://grafana.com/docs/grafana/latest/administration/provisioning/#data-sources
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus              # UID fixo: dashboards que referenciam por uid continuam funcionando
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090   # nome do serviço dentro da rede do docker-compose
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 15s           # alinha a resolução dos gráficos com o scrape_interval

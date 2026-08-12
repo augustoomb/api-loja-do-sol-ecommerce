@@ -1,0 +1,16 @@
+# Provisionamento automático de dashboards do Grafana
+# Os arquivos .json dentro de /var/lib/grafana/dashboards (mounted de ./grafana/dashboards)
+# são importados automaticamente ao subir o container.
+# Referência: https://grafana.com/docs/grafana/latest/administration/provisioning/#dashboards
+apiVersion: 1
+
+providers:
+  - name: 'default'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
