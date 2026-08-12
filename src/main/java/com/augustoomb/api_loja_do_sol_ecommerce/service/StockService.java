@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +46,7 @@ public class StockService {
     }
 
     @Transactional // GARANTE ATOMICIDADE (OU TUDO DO BLOCO FUNCIONA, OU TUDO EH DESFEITO)
+    @CacheEvict(cacheNames = "products", allEntries = true) // estoque mudou → invalidar catálogo cacheado
     public StockMovementResponseDTO recordEntry(Long productId, StockMovementRequestDTO dto, User user) {
         int quantity = validatePositive(dto.getQuantity());
         Product product = loadProduct(productId);
@@ -59,6 +61,7 @@ public class StockService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "products", allEntries = true) // estoque mudou → invalidar catálogo cacheado
     public StockMovementResponseDTO recordWithdrawal(Long productId, StockMovementRequestDTO dto, User user) {
         int quantity = validatePositive(dto.getQuantity());
         Product product = loadProduct(productId);
@@ -76,6 +79,7 @@ public class StockService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "products", allEntries = true) // estoque mudou → invalidar catálogo cacheado
     public StockMovementResponseDTO recordAdjustment(Long productId, StockAdjustmentRequestDTO dto, User user) {
         if (dto.getNewStock() < 0) {
             throw new BusinessException("O novo estoque não pode ser negativo");

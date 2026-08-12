@@ -10,6 +10,24 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: lojadbsol_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   app:
     build: .
@@ -30,8 +48,17 @@ services:
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       STRIPE_SIMULATE: ${STRIPE_SIMULATE:-true}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      # Dentro da rede do compose, o Redis SEMPRE está no hostname do serviço ("redis").
+      # IMPORTANTE: não usar ${REDIS_HOST} aqui — o .env tem REDIS_HOST=localhost (usado
+      # quando o app roda na sua máquina, fora do Docker). Dentro do container, "localhost"
+      # seria o próprio container e a conexão falharia com "Connection refused".
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     logging:
       driver: json-file
       options:
@@ -46,3 +73,4 @@ services:
 
 volumes:
   pgdata:
+  redisdata:

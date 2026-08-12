@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.augustoomb.api_loja_do_sol_ecommerce.dto.CategoryResponseDTO;
@@ -28,36 +30,47 @@ public class ProductService {
         this.categoryRepository = categoryRepository;
     }
 
+    // @Cacheable: se a resposta já estiver no Redis, não consulta o banco.
+    // A chave "'all'" representa a listagem inteira (cache: products::all).
+    @Cacheable(cacheNames = "products", key = "'all'")
     public List<ProductResponseDTO> findAll() {
         return productRepository.findAll().stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(cacheNames = "products", key = "#id") // cache: products::<id>
     public ProductResponseDTO findById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado com id: " + id));
         return toResponseDTO(product);
     }
 
+    @Cacheable(cacheNames = "products", key = "'category-' + #categoryId")
     public List<ProductResponseDTO> findByCategoryId(Long categoryId) {
         return productRepository.findByCategoryId(categoryId).stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(cacheNames = "products", key = "'enabled'")
     public List<ProductResponseDTO> findByEnabledTrue() {
         return productRepository.findByEnabledTrue().stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(cacheNames = "products", key = "'search-' + #name")
     public List<ProductResponseDTO> findByNameContaining(String name) {
         return productRepository.findByNameContainingIgnoreCase(name).stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
+    // @CacheEvict(allEntries = true): qualquer escrita de produto esvazia tod\o o
+    // cache de produtos. O DTO exibe estoque e categoria, então até uma mudança
+    // pequena pode deixar listagens antigas defasadas — mais seguro invalidar tudo.
+    @CacheEvict(cacheNames = "products", allEntries = true)
     public ProductResponseDTO create(ProductRequestDTO dto) {
         Category category = categoryRepository.findById(dto.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com id: " + dto.getCategoryId()));
@@ -73,6 +86,7 @@ public class ProductService {
         return toResponseDTO(productRepository.save(product));
     }
 
+    @CacheEvict(cacheNames = "products", allEntries = true)
     public ProductResponseDTO update(Long id, ProductRequestDTO dto) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado com id: " + id));
@@ -96,6 +110,7 @@ public class ProductService {
         return toResponseDTO(productRepository.save(product));
     }
 
+    @CacheEvict(cacheNames = "products", allEntries = true)
     public void delete(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado com id: " + id));

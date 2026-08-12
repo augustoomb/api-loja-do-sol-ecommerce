@@ -71,7 +71,7 @@ api-loja-do-sol-ecommerce/
 - [x] Livro de movimentações de estoque (entradas, saídas e ajustes) com histórico auditável e operador responsável.
 - [x] Estoque mínimo por produto e listagem de produtos com saldo baixo.
 - [x] SKU único por produto, com geração automática quando não informado.
-- [ ] Estratégia de invalidação de cache Redis ao atualizar produtos.
+- [x] Estratégia de invalidação de cache Redis ao atualizar produtos.
 
 ### 3. Carrinho & Checkout
 - [x] Adição, alteração e remoção de itens no carrinho de compras (carrinho server-side por usuário autenticado).
@@ -104,6 +104,42 @@ O estoque é modelado como um **livro de movimentações** (`stock_movements`): 
 | `GET` | `/api/stock/summary` | Resumo: total de produtos/unidades, baixo estoque e zerados |
 
 Todos os endpoints de estoque exigem a role `ROLE_ADMIN`. O produto também ganhou `sku` (único, com geração automática) e `minimumStock` (saldo mínimo para alerta).
+
+---
+
+## ⚡ Cache Redis (Módulo implementado)
+
+O **Redis** é usado como cache de leitura do catálogo via **Spring Cache** (`@Cacheable` / `@CacheEvict`). Apenas dados de **baixa frequência de escrita** são cacheados; carrinho, pedidos e estoque continuam lendo **sempre do banco** (sem risco de dado defasado).
+
+### O que é cacheado
+
+| Cache | Conteúdo | TTL |
+|---|---|---|
+| `products` | Listagens, produto por ID, por categoria, busca e ativos | 2 min |
+| `categories` | Listagem e categorias por ID/nome | 10 min |
+
+### Quando o cache é invalidado
+
+* Criar, atualizar ou excluir um **produto** → cache `products` é esvaziado.
+* Criar, atualizar ou excluir uma **categoria** → caches `categories` e `products` são esvaziados (o DTO de produto embute a categoria).
+* **Entrada, saída ou ajuste de estoque** → cache `products` é esvaziado (o DTO de produto exibe o saldo). Isso cobre também a baixa automática de estoque do checkout/webhook do Stripe.
+
+### Degradação graciosa
+
+Se o Redis estiver fora do ar, a aplicação **continua funcionando**: a falha é registrada no log e a consulta segue direto ao PostgreSQL (ver `CacheConfig.errorHandler()`).
+
+### Inspecionando o cache
+
+```bash
+docker exec -it lojadbsol_redis redis-cli
+> KEYS products*
+> TTL products::1      # tempo de vida restante de uma chave
+> GET  products::1     # valor serializado em JSON
+```
+
+* **Configuração:** `src/main/java/com/augustoomb/api_loja_do_sol_ecommerce/config/CacheConfig.java`
+* **Variáveis de ambiente:** `REDIS_HOST` (padrão `localhost`) e `REDIS_PORT` (padrão `6379`)
+* **Teste:** `CacheIntegrationTest` (verifica popular/invalidar o cache)
 
 ---
 
