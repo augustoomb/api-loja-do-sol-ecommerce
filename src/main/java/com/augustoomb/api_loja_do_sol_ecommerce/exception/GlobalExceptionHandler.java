@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.augustoomb.api_loja_do_sol_ecommerce.web.RequestIdFilter;
 
@@ -44,6 +45,14 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.UNPROCESSABLE_ENTITY, "Unprocessable Entity", ex, request);
     }
 
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoResourceFound(NoResourceFoundException ex, WebRequest request) {
+        log.warn("Rota não encontrada: {} (path={})", ex.getResourcePath(), pathOf(request));
+        Map<String, Object> body = baseBody(HttpStatus.NOT_FOUND, "Not Found", request);
+        body.put("message", "Rota não encontrada.");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex, WebRequest request) {
         log.error("Erro inesperado em {} (requestId={})", pathOf(request), MDC.get(RequestIdFilter.REQUEST_ID_MDC_KEY), ex);
@@ -53,7 +62,7 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<Map<String, Object>> build(HttpStatus status, String error,
-                                                      RuntimeException ex, WebRequest request) {
+                                                      Exception ex, WebRequest request) {
         Map<String, Object> body = baseBody(status, error, request);
         body.put("message", ex.getMessage());
         return ResponseEntity.status(status).body(body);

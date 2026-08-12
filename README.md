@@ -301,7 +301,8 @@ STRIPE_SIMULATE=true ./mvnw test
 
 ## Observabilidade
 
-- **Spring Actuator** expõe `health`, `info`, `metrics`, `loggers` e `cache` (health e info são públicos; os demais exigem `ROLE_ADMIN`).
+- **Spring Actuator** expõe `health` (incluindo os grupos `liveness` e `readiness`), `info`, `metrics` e `loggers`. `health` e `info` são públicos; os demais exigem `ROLE_ADMIN`.
+- **Informações da aplicação**: `/actuator/info` exibe nome, descrição e versão do projeto.
 - **Logging estruturado** de requisições: cada log carrega o `requestId` da requisição e o `userId` autenticado, facilitando o rastreio de erros.
 - O profile `prod` (`SPRING_PROFILES_ACTIVE=prod`) emite logs no formato ECS, pronto para ferramentas como Elastic Stack.
 
