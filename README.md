@@ -1,4 +1,4 @@
-# <img width="150" height="150" alt="515258110_17846218257516446_532124129804207679_n" src="https://github.com/user-attachments/assets/2e780b3d-ce18-492d-88fe-e5dda992e272" /> Loja do Sol — API de E-commerce
+# <img width="15" height="15" alt="515258110_17846218257516446_532124129804207679_n" src="https://github.com/user-attachments/assets/2e780b3d-ce18-492d-88fe-e5dda992e272" /> Loja do Sol — API de E-commerce
 
 API RESTful do e-commerce **Loja do Sol**: catálogo de produtos com cache em Redis, carrinho de compras server-side, checkout integrado ao Stripe e controle de estoque com auditoria.
 
