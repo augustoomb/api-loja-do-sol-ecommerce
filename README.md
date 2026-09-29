@@ -1,4 +1,4 @@
-# <img width="80" height="80" alt="515258110_17846218257516446_532124129804207679_n" src="https://github.com/user-attachments/assets/2e780b3d-ce18-492d-88fe-e5dda992e272" /> Loja do Sol — API de E-commerce
+# Loja do Sol — API de E-commerce
 
 API RESTful do e-commerce **Loja do Sol**: catálogo de produtos com cache em Redis, carrinho de compras server-side, checkout integrado ao Stripe e controle de estoque com auditoria.
 
@@ -12,6 +12,9 @@ API RESTful do e-commerce **Loja do Sol**: catálogo de produtos com cache em Re
 ![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?style=for-the-badge&logo=stripe&logoColor=white)
 
 ---
+
+<img width="1549" height="487" alt="Logo-Loja_do_Sol" src="https://github.com/user-attachments/assets/44483681-9e14-4a6e-b32a-173a17b6c96b" />
+
 
 ## Sumário
 
